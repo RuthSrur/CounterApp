@@ -9,16 +9,12 @@ def main():
     return render_template("home.html"), 200
 
 
-@app.route("/post", methods=["POST", "GET"])
+@app.route("/increment", methods=["POST", "GET"])
 def postcounter():
     global counter
     if request.method == "POST":
         counter += 1
-    return render_template("home.html", message="success")
-
-
-@app.route("/get", methods=["GET"])
-def getcounter():
+    print(counter)
     return render_template("home.html", counter=counter)
 
 
