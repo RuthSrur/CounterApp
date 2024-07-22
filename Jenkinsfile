@@ -37,7 +37,7 @@ pipeline {
                 script {
                     // Run unit tests in the Docker container
                     sh '''
-                    docker exec counter_app python3 -m unittest test_app
+                    docker exec counter_app python3 -m unittest test_main
                     '''
                 }
             }
