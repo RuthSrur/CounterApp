@@ -6,7 +6,7 @@ WORKDIR /app
 COPY main.py requirements.txt ./
 COPY static/ static/
 COPY templates/ templates/
-COPY test_app.py ./
+COPY test_main.py ./
 
 RUN pip install --no-cache-dir -r requirements.txt
 
