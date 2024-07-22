@@ -8,6 +8,18 @@ pipeline {
             }
         }
 
+        stage('Stop and Remove Existing Container') {
+            steps {
+                script {
+                    // Stop and remove the container if it exists
+                    sh '''
+                    docker ps -q -f name=counter_app | xargs -r docker stop
+                    docker ps -a -q -f name=counter_app | xargs -r docker rm
+                    '''
+                }
+            }
+        }
+
         stage('Run Docker container') {
             steps {
                 script {
@@ -35,8 +47,10 @@ pipeline {
             steps {
                 script {
                     // Stop and remove the container after tests
-                    sh 'docker stop counter_app || true'
-                    sh 'docker rm counter_app || true'
+                    sh '''
+                    docker stop counter_app || true
+                    docker rm counter_app || true
+                    '''
                 }
             }
         }
