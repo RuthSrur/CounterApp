@@ -1,1 +1,6 @@
 counter_venv 
+_pychache_
+.terraform
+.terraform*
+.terraform
+terraform.tfstate
