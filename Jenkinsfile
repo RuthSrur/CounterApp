@@ -1,6 +1,12 @@
 pipeline {
     agent any
 
+    environment {
+        AWS_REGION = 'us-east-1' 
+        AWS_CREDENTIALS_ID = 'aws-credentials-id' 
+        ECR_REPO_URI_CREDENTIALS_ID = 'ECR-URI' 
+    }
+
     stages {
         stage('Build Docker image') {
             steps {
@@ -51,6 +57,40 @@ pipeline {
                     docker stop counter_app || true
                     docker rm counter_app || true
                     '''
+                }
+            }
+        }
+
+        stage('Login to ECR') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: env.AWS_CREDENTIALS_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
+                                 string(credentialsId: env.ECR_REPO_URI_CREDENTIALS_ID, variable: 'ECR_REPO_URI')]) {
+                    script {
+                        // Authenticate Docker to the ECR registry
+                        sh '''
+                        aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+                        aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+                        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Tag Docker Image') {
+            steps {
+                script {
+                    // Tag the Docker image with the ECR repository URI
+                    sh 'docker tag counter:1.0 $ECR_REPO_URI:1.0'
+                }
+            }
+        }
+
+        stage('Push Docker Image to ECR') {
+            steps {
+                script {
+                    // Push the Docker image to ECR
+                    sh 'docker push $ECR_REPO_URI:1.0'
                 }
             }
         }
