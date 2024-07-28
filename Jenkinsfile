@@ -11,11 +11,11 @@ pipeline {
         stage('Install AWS CLI') {
             steps {
                 sh '''
-                apt-get update
-                apt-get install -y curl unzip
+                sudo apt-get update
+                sudo apt-get install -y curl unzip
                 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
                 unzip awscliv2.zip
-                ./aws/install
+                sudo ./aws/install
                 rm -rf awscliv2.zip aws
                 '''
             }
@@ -104,8 +104,4 @@ pipeline {
                 script {
                     // Push the Docker image to ECR
                     sh 'docker push $ECR_REPO_URI:1.0'
-                }
-            }
-        }
-    }
-}
+      
