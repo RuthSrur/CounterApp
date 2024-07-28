@@ -104,4 +104,8 @@ pipeline {
                 script {
                     // Push the Docker image to ECR
                     sh 'docker push $ECR_REPO_URI:1.0'
-      
+                }
+            }
+        }
+    }
+}
