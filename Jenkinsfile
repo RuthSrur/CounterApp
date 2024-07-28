@@ -8,19 +8,6 @@ pipeline {
     }
 
     stages {
-        stage('Install AWS CLI') {
-            steps {
-                sh '''
-                sudo apt-get update
-                sudo apt-get install -y curl unzip
-                curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-                unzip awscliv2.zip
-                sudo ./aws/install
-                rm -rf awscliv2.zip aws
-                '''
-            }
-        }
-
         stage('Build Docker image') {
             steps {
                 sh 'docker build . -t counter:1.0'
