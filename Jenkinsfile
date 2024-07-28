@@ -4,7 +4,7 @@ pipeline {
     environment {
         AWS_REGION = 'us-east-1'
         AWS_CREDENTIALS_ID = 'aws-credentials-id'
-        ECR_REPO_URI_CREDENTIALS_ID = 'ECR-URI'
+        ECR_REPO_URI_CREDENTIALS_ID = 'ecr-repo-uri-id'
     }
 
     stages {
