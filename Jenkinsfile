@@ -1,41 +1,16 @@
 pipeline {
     agent any
-
     environment {
         AWS_REGION = 'us-east-1'
         AWS_CREDENTIALS_ID = 'aws-credentials-id'
         ECR_REPO_URI_CREDENTIALS_ID = 'ecr-repo-uri-id'
     }
-
     stages {
-        stage('Print Credentials') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: env.AWS_CREDENTIALS_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
-                                 string(credentialsId: env.ECR_REPO_URI_CREDENTIALS_ID, variable: 'ECR_REPO_URI')]) {
-                    script {
-                        echo "AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}"
-                        echo "AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}"
-                        echo "ECR_REPO_URI: ${ECR_REPO_URI}"
-                        
-                        // Print base64 encoded value
-                        sh 'echo ${ECR_REPO_URI} | base64'
-
-                        // Write credentials to a file for debugging
-                        sh '''
-                        echo $ECR_REPO_URI > /tmp/ecr_repo_uri.txt
-                        cat /tmp/ecr_repo_uri.txt
-                        '''
-                    }
-                }
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
                 sh 'docker build . -t counter:1.0'
             }
         }
-
         stage('Stop and Remove Existing Container') {
             steps {
                 script {
@@ -46,7 +21,6 @@ pipeline {
                 }
             }
         }
-
         stage('Run Docker Container') {
             steps {
                 script {
@@ -55,7 +29,6 @@ pipeline {
                 }
             }
         }
-
         stage('Run Unit Tests') {
             steps {
                 script {
@@ -65,7 +38,6 @@ pipeline {
                 }
             }
         }
-
         stage('Cleanup') {
             steps {
                 script {
@@ -76,32 +48,38 @@ pipeline {
                 }
             }
         }
-
         stage('Login to ECR') {
             steps {
                 withCredentials([usernamePassword(credentialsId: env.AWS_CREDENTIALS_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
                                  string(credentialsId: env.ECR_REPO_URI_CREDENTIALS_ID, variable: 'ECR_REPO_URI')]) {
                     script {
-                        // Configure AWS CLI and log in to ECR
                         sh '''
                         aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
                         aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
                         aws configure set region $AWS_REGION
                         aws ecr-public get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
                         '''
+                        // Set ECR_REPO_URI as an environment variable
+                        env.ECR_REPO_URI = ECR_REPO_URI
                     }
                 }
             }
         }
-
+        stage('Print ECR URI') {
+            steps {
+                script {
+                    echo "ECR_REPO_URI: ${env.ECR_REPO_URI}"
+                }
+            }
+        }
         stage('Tag Docker Image') {
             steps {
                 script {
+                    echo "ECR_REPO_URI before tagging: ${env.ECR_REPO_URI}"
                     sh 'docker tag counter:1.0 ${ECR_REPO_URI}:latest'
                 }
             }
         }
-
         stage('Push Docker Image to ECR') {
             steps {
                 script {
