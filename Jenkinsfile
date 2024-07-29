@@ -76,7 +76,7 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    docker tag counter:1.0 $ECR_REPO_URI/counter:1.0
+                    docker tag counter:1.0 $ECR_REPO_URI:1.0
                     '''
                 }
             }
@@ -86,7 +86,7 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    docker push $ECR_REPO_URI/counter:1.0
+                    docker push $ECR_REPO_URI:1.0
                     '''
                 }
             }
