@@ -57,10 +57,11 @@ pipeline {
 
         stage('Login to ECR') {
             steps {
-                withCredentials([usernamePassword(credentialsId: env.AWS_CREDENTIALS_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
-                                 string(credentialsId: env.ECR_REPO_URI_CREDENTIALS_ID, variable: 'ECR_REPO_URI')]) {
+                withCredentials([
+                    usernamePassword(credentialsId: env.AWS_CREDENTIALS_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
+                    string(credentialsId: env.ECR_REPO_URI_CREDENTIALS_ID, variable: 'ECR_REPO_URI')
+                ]) {
                     script {
-                        // Configure AWS CLI and log in to ECR
                         sh '''
                         aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
                         aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
@@ -76,6 +77,8 @@ pipeline {
             steps {
                 script {
                     sh '''
+                    echo "Tagging Docker image..."
+                    echo "ECR_REPO_URI: $ECR_REPO_URI"
                     docker tag counter:1.0 $ECR_REPO_URI:1.0
                     '''
                 }
