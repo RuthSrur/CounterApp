@@ -10,7 +10,7 @@ pipeline {
     stages {
         stage('Build Docker Image') {
             steps {
-                sh 'docker build . -t counter:latest'
+                sh 'docker build . -t counter:1.0'
             }
         }
 
@@ -28,7 +28,7 @@ pipeline {
         stage('Run Docker Container') {
             steps {
                 script {
-                    sh 'docker run -d --name counter_app -p 8080:8080 counter:latest'
+                    sh 'docker run -d --name counter_app -p 8080:8080 counter:1.0'
                     sleep 10
                 }
             }
@@ -57,17 +57,15 @@ pipeline {
 
         stage('Login to ECR') {
             steps {
-                withCredentials([
-                    usernamePassword(credentialsId: env.AWS_CREDENTIALS_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
-                    string(credentialsId: env.ECR_REPO_URI_CREDENTIALS_ID, variable: 'ECR_REPO_URI')
-                ]) {
+                withCredentials([usernamePassword(credentialsId: env.AWS_CREDENTIALS_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
+                                 string(credentialsId: env.ECR_REPO_URI_CREDENTIALS_ID, variable: 'ECR_REPO_URI')]) {
                     script {
+                        // Configure AWS CLI and log in to ECR
                         sh '''
                         aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
                         aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
                         aws configure set region $AWS_REGION
                         aws ecr-public get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
-                        echo "ECR_REPO_URI: $ECR_REPO_URI"
                         '''
                     }
                 }
@@ -77,11 +75,7 @@ pipeline {
         stage('Tag Docker Image') {
             steps {
                 script {
-                    sh '''
-                    echo "Tagging Docker image..."
-                    echo "ECR_REPO_URI: $ECR_REPO_URI"
-                    docker tag counter:latest $ECR_REPO_URI:latest
-                    '''
+                    sh 'docker tag counter:1.0 $ECR_REPO_URI:latest'
                 }
             }
         }
@@ -89,9 +83,7 @@ pipeline {
         stage('Push Docker Image to ECR') {
             steps {
                 script {
-                    sh '''
-                    docker push $ECR_REPO_URI:latest
-                    '''
+                    sh 'docker push $ECR_REPO_URI:latest'
                 }
             }
         }
