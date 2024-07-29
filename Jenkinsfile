@@ -10,7 +10,7 @@ pipeline {
     stages {
         stage('Build Docker Image') {
             steps {
-                sh 'docker build . -t counter:1.0'
+                sh 'docker build . -t counter:latest'
             }
         }
 
@@ -28,7 +28,7 @@ pipeline {
         stage('Run Docker Container') {
             steps {
                 script {
-                    sh 'docker run -d --name counter_app -p 8080:8080 counter:1.0'
+                    sh 'docker run -d --name counter_app -p 8080:8080 counter:latest'
                     sleep 10
                 }
             }
@@ -80,7 +80,7 @@ pipeline {
                     sh '''
                     echo "Tagging Docker image..."
                     echo "ECR_REPO_URI: $ECR_REPO_URI"
-                    docker tag counter:1.0 $ECR_REPO_URI:1.0
+                    docker tag counter:latest $ECR_REPO_URI:latest
                     '''
                 }
             }
@@ -90,7 +90,7 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    docker push $ECR_REPO_URI:1.0
+                    docker push $ECR_REPO_URI:latest
                     '''
                 }
             }
