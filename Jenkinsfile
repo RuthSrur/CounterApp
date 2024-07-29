@@ -10,7 +10,7 @@ pipeline {
     stages {
         stage('Build Docker Image') {
             steps {
-                sh 'docker build . -t counter:1.0'
+                sh 'docker build . -t counter:1'
             }
         }
 
@@ -75,7 +75,7 @@ pipeline {
         stage('Tag Docker Image') {
             steps {
                 script {
-                    sh 'docker tag counter:1.0 $ECR_REPO_URI:1.0'
+                    sh 'docker tag counter:1 $ECR_REPO_URI:1'
                 }
             }
         }
@@ -83,7 +83,7 @@ pipeline {
         stage('Push Docker Image to ECR') {
             steps {
                 script {
-                    sh 'docker push $ECR_REPO_URI:1.0'
+                    sh 'docker push $ECR_REPO_URI:1'
                 }
             }
         }
