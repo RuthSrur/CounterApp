@@ -2,6 +2,8 @@ pipeline {
     agent any
     environment {
         AWS_REGION = 'us-east-1'
+        AWS_CREDENTIALS_ID = 'aws-credentials-id'
+        ECR_REPO_URI_CREDENTIALS_ID = 'ecr-repo-uri-id'
         AWS_CLI_DIR = "${env.JENKINS_HOME}/aws-cli"
     }
     stages {
@@ -10,7 +12,7 @@ pipeline {
                 sh """
                 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
                 unzip awscliv2.zip
-                ./aws/install -i ${AWS_CLI_DIR} -b ${AWS_CLI_DIR}/bin --update
+                ./aws/install -i ${AWS_CLI_DIR} -b ${AWS_CLI_DIR}/bin
                 export PATH="\${PATH}:${AWS_CLI_DIR}/bin"
                 aws --version
                 """
@@ -66,16 +68,16 @@ pipeline {
         
         stage('Login to ECR') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'aws-credentials-id', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
-                                 string(credentialsId: 'ecr-repo-uri-id', variable: 'ECR_REPO_URI')]) {
+                withCredentials([usernamePassword(credentialsId: env.AWS_CREDENTIALS_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
+                                 string(credentialsId: env.ECR_REPO_URI_CREDENTIALS_ID, variable: 'ECR_REPO_URI')]) {
                     script {
-                        sh """
+                        sh '''
                         export PATH="\${PATH}:${AWS_CLI_DIR}/bin"
                         aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
                         aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
                         aws configure set region $AWS_REGION
                         aws ecr-public get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
-                        """
+                        '''
                     }
                 }
             }
@@ -101,10 +103,10 @@ pipeline {
         stage('Push Docker Image to ECR') {
             steps {
                 script {
-                    sh """
+                    sh '''
                     export PATH="\${PATH}:${AWS_CLI_DIR}/bin"
                     docker push ${env.ECR_REPO_URI}:latest
-                    """
+                    '''
                 }
             }
         }
