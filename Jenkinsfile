@@ -6,6 +6,17 @@ pipeline {
         ECR_REPO_URI_CREDENTIALS_ID = 'ecr-repo-uri-id'
     }
     stages {
+        stage('Install AWS CLI') {
+            steps {
+                sh '''
+                curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                unzip awscliv2.zip
+                sudo ./aws/install
+                aws --version
+                '''
+            }
+        }
+        
         stage('Build Docker Image') {
             steps {
                 sh 'docker build . -t counter:1.0'
@@ -86,6 +97,11 @@ pipeline {
                     sh 'docker push ${ECR_REPO_URI}:latest'
                 }
             }
+        }
+    }
+    post {
+        always {
+            cleanWs()
         }
     }
 }
