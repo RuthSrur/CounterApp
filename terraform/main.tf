@@ -150,7 +150,7 @@ resource "aws_instance" "docker_instance" {
 
             # Create Dockerfile for Jenkins with Docker
             cat <<-EOD > Dockerfile
-            FROM jenkins/jenkins:2.426.3-jdk17
+            FROM jenkins/jenkins:2.452.3-jdk17
             USER root
             RUN apt-get update && apt-get install -y lsb-release
             RUN curl -fsSLo /usr/share/keyrings/docker-archive-keyring.asc https://download.docker.com/linux/debian/gpg
