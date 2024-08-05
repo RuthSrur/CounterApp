@@ -4,16 +4,18 @@ pipeline {
         AWS_REGION = 'us-east-1'
         AWS_CREDENTIALS_ID = 'aws-credentials-id'
         ECR_REPO_URI_CREDENTIALS_ID = 'ecr-repo-uri-id'
+        AWS_CLI_DIR = "${env.JENKINS_HOME}/aws-cli"
     }
     stages {
         stage('Install AWS CLI') {
             steps {
-                sh '''
+                sh """
                 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
                 unzip awscliv2.zip
-                ./aws/install -i /usr/local/aws-cli -b /usr/local/bin
+                ./aws/install -i ${AWS_CLI_DIR} -b ${AWS_CLI_DIR}/bin
+                export PATH="\${PATH}:${AWS_CLI_DIR}/bin"
                 aws --version
-                '''
+                """
             }
         }
         
@@ -22,6 +24,7 @@ pipeline {
                 sh 'docker build . -t counter:1.0'
             }
         }
+        
         stage('Stop and Remove Existing Container') {
             steps {
                 script {
@@ -32,6 +35,7 @@ pipeline {
                 }
             }
         }
+        
         stage('Run Docker Container') {
             steps {
                 script {
@@ -40,6 +44,7 @@ pipeline {
                 }
             }
         }
+        
         stage('Run Unit Tests') {
             steps {
                 script {
@@ -49,6 +54,7 @@ pipeline {
                 }
             }
         }
+        
         stage('Cleanup') {
             steps {
                 script {
@@ -59,23 +65,26 @@ pipeline {
                 }
             }
         }
+        
         stage('Login to ECR') {
             steps {
                 withCredentials([usernamePassword(credentialsId: env.AWS_CREDENTIALS_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
                                  string(credentialsId: env.ECR_REPO_URI_CREDENTIALS_ID, variable: 'ECR_REPO_URI')]) {
                     script {
-                        sh '''
+                        sh """
+                        export PATH="\${PATH}:${AWS_CLI_DIR}/bin"
                         aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
                         aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
                         aws configure set region $AWS_REGION
                         aws ecr-public get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
-                        '''
+                        """
                         // Set ECR_REPO_URI as an environment variable
                         env.ECR_REPO_URI = ECR_REPO_URI
                     }
                 }
             }
         }
+        
         stage('Print ECR URI') {
             steps {
                 script {
@@ -83,6 +92,7 @@ pipeline {
                 }
             }
         }
+        
         stage('Tag Docker Image') {
             steps {
                 script {
@@ -91,14 +101,19 @@ pipeline {
                 }
             }
         }
+        
         stage('Push Docker Image to ECR') {
             steps {
                 script {
-                    sh 'docker push ${ECR_REPO_URI}:latest'
+                    sh """
+                    export PATH="\${PATH}:${AWS_CLI_DIR}/bin"
+                    docker push ${ECR_REPO_URI}:latest
+                    """
                 }
             }
         }
     }
+    
     post {
         always {
             cleanWs()
