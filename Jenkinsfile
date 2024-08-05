@@ -7,15 +7,22 @@ pipeline {
         AWS_CLI_DIR = "${env.JENKINS_HOME}/aws-cli"
     }
     stages {
-        stage('Install AWS CLI') {
+        stage('Check and Install AWS CLI') {
             steps {
-                sh """
-                curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-                unzip awscliv2.zip
-                ./aws/install -i ${AWS_CLI_DIR} -b ${AWS_CLI_DIR}/bin
-                export PATH="\${PATH}:${AWS_CLI_DIR}/bin"
-                aws --version
-                """
+                script {
+                    def awsCliInstalled = sh(script: "if [ -x ${AWS_CLI_DIR}/bin/aws ]; then ${AWS_CLI_DIR}/bin/aws --version; else echo 'not installed'; fi", returnStdout: true).trim()
+                    if (awsCliInstalled.contains('aws-cli')) {
+                        echo "AWS CLI already installed: ${awsCliInstalled}"
+                    } else {
+                        sh """
+                        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                        unzip awscliv2.zip
+                        ./aws/install -i ${AWS_CLI_DIR} -b ${AWS_CLI_DIR}/bin
+                        export PATH="\${PATH}:${AWS_CLI_DIR}/bin"
+                        aws --version
+                        """
+                    }
+                }
             }
         }
         
