@@ -68,6 +68,7 @@ pipeline {
                     sh '''
                     docker stop counter_app || true
                     docker rm counter_app || true
+                    echo $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $AWS_REGION $ECR_REPO_URI
                     '''
                 }
             }
@@ -80,7 +81,6 @@ pipeline {
                     script {
                         sh '''
                         export PATH="\${PATH}:${AWS_CLI_DIR}/bin"
-                        echo $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $AWS_REGION $ECR_REPO_URI
                         aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID  
                         aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
                         aws configure set region $AWS_REGION
