@@ -63,16 +63,20 @@ pipeline {
             }
         }
         
-        stage('Login to ECR') {
+         stage('Login to ECR') {
             steps {
-                withCredentials([usernamePassword(credentialsId: env.AWS_CREDENTIALS_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
-                                 string(credentialsId: env.ECR_REPO_URI_CREDENTIALS_ID, variable: 'ECR_REPO_URI')]) {
-                    sh '''
-                    aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID  
-                    aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-                    aws configure set region $AWS_REGION
-                    aws ecr-public get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
-                    '''
+                script {
+                    withCredentials([usernamePassword(credentialsId: env.AWS_CREDENTIALS_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
+                                     string(credentialsId: env.ECR_REPO_URI_CREDENTIALS_ID, variable: 'ECR_REPO_URI')]) {
+                        sh '''
+                        aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID  
+                        aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+                        aws configure set region $AWS_REGION
+                        aws ecr-public get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
+                        '''
+                        // Set ECR_REPO_URI as an environment variable
+                        env.ECR_REPO_URI = ECR_REPO_URI
+                    }
                 }
             }
         }
@@ -85,13 +89,13 @@ pipeline {
         
         stage('Tag Docker Image') {
             steps {
-                sh 'docker tag counter:1.0 ${env.ECR_REPO_URI}:latest'
+                sh "docker tag counter:1.0 ${env.ECR_REPO_URI}:latest"
             }
         }
         
         stage('Push Docker Image to ECR') {
             steps {
-                sh 'docker push ${env.ECR_REPO_URI}:latest'
+                sh "docker push ${env.ECR_REPO_URI}:latest"
             }
         }
     }
