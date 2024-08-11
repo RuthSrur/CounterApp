@@ -75,8 +75,6 @@ pipeline {
                         aws configure set region $AWS_REGION
                         aws ecr-public get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
                         '''
-                        // Set ECR_REPO_URI as an environment variable
-                        env.ECR_REPO_URI = ECR_REPO_URI
                     }
                 }
             }
