@@ -98,10 +98,10 @@ pipeline {
             steps {
                 script {
                     def keyFile = "${env.WORKSPACE}/aws-ec2-key.pem"
-                    withCredentials([sshUserPrivateKey(credentialsId: env.PEM_KEY_CREDENTIALS_ID, keyFileVariable: 'SSH_KEY')]) {
+                    withCredentials([string(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY')]) {
                         sh """
-                        # Copy the SSH key to a file in the workspace
-                        cp \$SSH_KEY ${keyFile}
+                        # Write the PEM key to a file
+                        echo "\$PEM_KEY" > ${keyFile}
                         chmod 400 ${keyFile}
 
                         # Deploy the Docker container on EC2
