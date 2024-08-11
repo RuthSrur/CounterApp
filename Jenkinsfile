@@ -94,33 +94,38 @@ pipeline {
             }
         }
 
-        stage('Deploy Docker Container on EC2') {
-            steps {
-                script {
-                    def keyFile = "${env.WORKSPACE}/aws-ec2-key.pem"
-                    withCredentials([string(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY')]) {
-                        sh """
-                        # Write the PEM key to a file
-                        echo "\$PEM_KEY" > ${keyFile}
-                        chmod 400 ${keyFile}
+stage('Deploy Docker Container on EC2') {
+    steps {
+        script {
+            def keyFile = "${env.WORKSPACE}/aws-ec2-key.pem"
+            withCredentials([string(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY')]) {
+                sh """
+                # Write the PEM key to a file, removing any carriage returns
+                echo "\$PEM_KEY" | tr -d '\r' > ${keyFile}
+                chmod 400 ${keyFile}
 
-                        # Deploy the Docker container on EC2
-                        ssh -o StrictHostKeyChecking=no -i ${keyFile} ec2-user@35.153.78.170 << EOF
-                        docker pull ${env.ECR_REPO_URI}:latest
-                        docker stop counter_app || true
-                        docker rm counter_app || true
-                        docker run -d --name counter_app -p ${DEPLOY_PORT}:8080 ${env.ECR_REPO_URI}:latest
-                        EOF
+                # Debug: Check the beginning of the key file
+                echo "First 3 lines of key file:"
+                head -n 3 ${keyFile}
 
-                        # Remove the key file
-                        rm ${keyFile}
-                        """
-                    }
-                }
+                # Debug: Check key with ssh-keygen
+                ssh-keygen -l -f ${keyFile} || echo "Failed to read key file"
+
+                # Deploy the Docker container on EC2
+                ssh -v -o StrictHostKeyChecking=no -i ${keyFile} ec2-user@35.153.78.170 << EOF
+                docker pull ${env.ECR_REPO_URI}:latest
+                docker stop counter_app || true
+                docker rm counter_app || true
+                docker run -d --name counter_app -p ${DEPLOY_PORT}:8080 ${env.ECR_REPO_URI}:latest
+                EOF
+
+                # Remove the key file
+                rm ${keyFile}
+                """
             }
         }
     }
-
+}
     post {
         always {
             cleanWs()
