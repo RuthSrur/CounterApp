@@ -101,7 +101,7 @@ pipeline {
                     withCredentials([string(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY')]) {
                         sh """
                         # Write the PEM key to a file, removing any carriage returns
-                        echo "\$PEM_KEY" | tr -d '\r' > ${keyFile}
+                        echo "\$PEM_KEY" | tr -d '\\r' > ${keyFile}
                         chmod 400 ${keyFile}
 
                         # Debug: Check the beginning of the key file
@@ -127,6 +127,7 @@ pipeline {
             }
         }
 
+    }
     post {
         always {
             cleanWs()
