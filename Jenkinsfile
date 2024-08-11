@@ -100,24 +100,32 @@ pipeline {
                     def keyFile = "${env.WORKSPACE}/aws-ec2-key.pem"
                     withCredentials([string(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY')]) {
                         sh """
-                        # Write the PEM key to a file, removing any carriage returns
-                        echo "\$PEM_KEY" | tr -d '\\r' > ${keyFile}
+                        # Write the PEM key to a file
+                        echo "\$PEM_KEY" > ${keyFile}
                         chmod 400 ${keyFile}
 
-                        # Debug: Check the beginning of the key file
-                        echo "First 3 lines of key file:"
-                        head -n 3 ${keyFile}
+                        # Debug: Check the key file content (be careful not to expose the full key)
+                        echo "Key file content:"
+                        sed -n '1p; \$p' ${keyFile}
 
-                        # Debug: Check key with ssh-keygen
-                        ssh-keygen -l -f ${keyFile} || echo "Failed to read key file"
+                        # Try to use ssh-keygen to validate the key
+                        ssh-keygen -y -f ${keyFile} || echo "Failed to read private key"
 
-                        # Deploy the Docker container on EC2
-                        ssh -v -o StrictHostKeyChecking=no -i ${keyFile} ec2-user@35.153.78.170 << EOF
-                        docker pull ${env.ECR_REPO_URI}:latest
-                        docker stop counter_app || true
-                        docker rm counter_app || true
-                        docker run -d --name counter_app -p ${DEPLOY_PORT}:8080 ${env.ECR_REPO_URI}:latest
-                        EOF
+                        # Attempt SSH connection with verbose output
+                        ssh -v -o StrictHostKeyChecking=no -i ${keyFile} ec2-user@35.153.78.170 'echo "SSH connection successful"'
+
+                        # If SSH connection is successful, proceed with deployment
+                        if [ \$? -eq 0 ]; then
+                            ssh -o StrictHostKeyChecking=no -i ${keyFile} ec2-user@35.153.78.170 << EOF
+                            docker pull ${env.ECR_REPO_URI}:latest
+                            docker stop counter_app || true
+                            docker rm counter_app || true
+                            docker run -d --name counter_app -p ${DEPLOY_PORT}:8080 ${env.ECR_REPO_URI}:latest
+                            EOF
+                        else
+                            echo "SSH connection failed. Deployment aborted."
+                            exit 1
+                        fi
 
                         # Remove the key file
                         rm ${keyFile}
@@ -127,7 +135,6 @@ pipeline {
             }
         }
 
-    }
     post {
         always {
             cleanWs()
