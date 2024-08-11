@@ -98,7 +98,7 @@ pipeline {
                 script {
                     withCredentials([usernamePassword(credentialsId: env.AWS_CREDENTIALS_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                         sh '''
-                        ssh -o StrictHostKeyChecking=no -i /path/to/your/aws-ec2-key.pem ec2-user@<EC2_INSTANCE_PUBLIC_IP> << 'EOF'
+                        ssh -o StrictHostKeyChecking=no -i /path/to/your/aws-ec2-key.pem ec2-user@35.153.78.170 << 'EOF'
                         docker pull ${ECR_REPO_URI}:latest
                         docker stop counter_app || true
                         docker rm counter_app || true
