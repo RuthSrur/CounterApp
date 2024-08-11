@@ -63,7 +63,7 @@ pipeline {
             }
         }
         
-         stage('Login to ECR') {
+        stage('Login to ECR') {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: env.AWS_CREDENTIALS_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
@@ -74,16 +74,9 @@ pipeline {
                         aws configure set region $AWS_REGION
                         aws ecr-public get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
                         '''
-                        // Set ECR_REPO_URI as an environment variable
                         env.ECR_REPO_URI = ECR_REPO_URI
                     }
                 }
-            }
-        }
-        
-        stage('Print ECR URI') {
-            steps {
-                echo "ECR_REPO_URI: ${env.ECR_REPO_URI}"
             }
         }
         

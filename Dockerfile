@@ -15,7 +15,7 @@ RUN apt-get update && \
     rm -rf awscliv2.zip aws && \
     apt-get clean
 
-# Copy the application code and requirements
+# Copy the app and requirements
 COPY main.py requirements.txt test_main.py ./
 COPY static/ static/
 COPY templates/ templates/
@@ -29,5 +29,5 @@ EXPOSE 5000
 ENV FLASK_APP=main.py
 ENV FLASK_RUN_HOST=0.0.0.0
 
-# Run the application when the container launches
+# Run application
 CMD ["flask", "run"]
