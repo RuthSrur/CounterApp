@@ -6,7 +6,7 @@ pipeline {
         ECR_REPO_URI_CREDENTIALS_ID = 'ecr-repo-uri-id'
         AWS_CLI_DIR = "${env.JENKINS_HOME}/aws-cli"
         PATH = "${env.PATH}:${AWS_CLI_DIR}/bin"
-        DEPLOY_PORT = '8081'  // Change this port as needed
+        PEM_KEY_BASE64 = credentials('aws-ec2-key-base64')
     }
     stages {
         stage('Check and Install AWS CLI') {
@@ -26,13 +26,13 @@ pipeline {
                 }
             }
         }
-
+        
         stage('Build Docker Image') {
             steps {
                 sh 'docker build . -t counter:1.0'
             }
         }
-
+        
         stage('Stop and Remove Existing Container') {
             steps {
                 sh '''
@@ -41,20 +41,20 @@ pipeline {
                 '''
             }
         }
-
+        
         stage('Run Docker Container') {
             steps {
-                sh "docker run -d --name counter_app -p ${DEPLOY_PORT}:8080 counter:1.0"
+                sh 'docker run -d --name counter_app -p 8080:8080 counter:1.0'
                 sleep 10
             }
         }
-
+        
         stage('Run Unit Tests') {
             steps {
                 sh 'docker exec counter_app python3 -m unittest test_main'
             }
         }
-
+        
         stage('Cleanup') {
             steps {
                 sh '''
@@ -63,7 +63,7 @@ pipeline {
                 '''
             }
         }
-
+        
         stage('Login to ECR') {
             steps {
                 script {
@@ -75,42 +75,30 @@ pipeline {
                         aws configure set region $AWS_REGION
                         aws ecr-public get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
                         '''
+                        // Set ECR_REPO_URI as an environment variable
                         env.ECR_REPO_URI = ECR_REPO_URI
                     }
                 }
             }
         }
-
-        stage('Tag Docker Image') {
-            steps {
-                sh "docker tag counter:1.0 ${env.ECR_REPO_URI}:latest"
-            }
-        }
-
-        stage('Push Docker Image to ECR') {
-            steps {
-                sh "docker push ${env.ECR_REPO_URI}:latest"
-            }
-        }
         
-        stage('Deploy Docker Container on EC2') {
+        stage('Deploy Flask API') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: env.AWS_CREDENTIALS_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh '''
-                        ssh -o StrictHostKeyChecking=no -i /path/to/your/aws-ec2-key.pem ec2-user@35.153.78.170 << 'EOF'
+                    // Decode the PEM key and use it to access the instance
+                    sh '''
+                    echo "$PEM_KEY_BASE64" | base64 --decode > /tmp/aws-ec2-key.pem
+                    chmod 400 /tmp/aws-ec2-key.pem
+                    ssh -o StrictHostKeyChecking=no -i /tmp/aws-ec2-key.pem ec2-user@<your-ec2-public-ip> '
                         docker pull ${ECR_REPO_URI}:latest
-                        docker stop counter_app || true
-                        docker rm counter_app || true
-                        docker run -d --name counter_app -p ${DEPLOY_PORT}:8080 ${ECR_REPO_URI}:latest
-                        EOF
-                        '''
-                    }
+                        docker run -d --name flask_api -p 9090:9090 ${ECR_REPO_URI}:latest
+                    '
+                    '''
                 }
             }
         }
     }
-
+    
     post {
         always {
             cleanWs()
