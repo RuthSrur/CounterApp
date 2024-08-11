@@ -69,8 +69,7 @@ pipeline {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: env.AWS_CREDENTIALS_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
-                                     string(credentialsId: env.ECR_REPO_URI_CREDENTIALS_ID, variable: 'ECR_REPO_URI'),
-                                     string(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY_BASE64')]) {
+                                     string(credentialsId: env.ECR_REPO_URI_CREDENTIALS_ID, variable: 'ECR_REPO_URI')]) {
                         sh '''
                         aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID  
                         aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
@@ -100,12 +99,17 @@ pipeline {
                 script {
                     withCredentials([string(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY_BASE64')]) {
                         sh '''
-                        # Decode the PEM key
+                        # Decode the PEM key and check contents
+                        echo "Base64 PEM Key: $PEM_KEY_BASE64" > /tmp/debug.pem
                         echo $PEM_KEY_BASE64 | base64 --decode > /tmp/aws-ec2-key.pem
                         chmod 400 /tmp/aws-ec2-key.pem
-                        
+
+                        # Test PEM key
+                        echo "Decoded PEM Key Contents:"
+                        cat /tmp/aws-ec2-key.pem
+
                         # Deploy the Docker container on EC2
-                        ssh -o StrictHostKeyChecking=no -i /tmp/aws-ec2-key.pem ec2-user@35.153.78.170/ << 'EOF'
+                        ssh -o StrictHostKeyChecking=no -i /tmp/aws-ec2-key.pem ec2-user@35.153.78.170 << 'EOF'
                         docker pull ${ECR_REPO_URI}:latest
                         docker stop counter_app || true
                         docker rm counter_app || true
