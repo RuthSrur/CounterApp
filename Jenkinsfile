@@ -4,7 +4,7 @@ pipeline {
         AWS_REGION = 'us-east-1'
         AWS_CREDENTIALS_ID = 'aws-credentials-id'
         ECR_REPO_URI_CREDENTIALS_ID = 'ecr-repo-uri-id'
-        PEM_KEY_CREDENTIALS_ID = 'aws-ec2-key' // Update with your actual secret text ID
+        PEM_KEY_CREDENTIALS_ID = 'aws-ec2-key'
         AWS_CLI_DIR = "${env.JENKINS_HOME}/aws-cli"
         PATH = "${env.PATH}:${AWS_CLI_DIR}/bin"
         DEPLOY_PORT = '8081'
@@ -97,25 +97,24 @@ pipeline {
         stage('Deploy Docker Container on EC2') {
             steps {
                 script {
-                    withCredentials([string(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY_BASE64')]) {
-                        sh '''
-                        # Decode the PEM key and check contents
-                        echo "Base64 PEM Key: $PEM_KEY_BASE64" > /tmp/debug.pem
-                        echo $PEM_KEY_BASE64 | base64 --decode > /tmp/aws-ec2-key.pem
-                        chmod 400 /tmp/aws-ec2-key.pem
-
-                        # Test PEM key
-                        echo "Decoded PEM Key Contents:"
-                        cat /tmp/aws-ec2-key.pem
+                    def keyFile = "${env.WORKSPACE}/aws-ec2-key.pem"
+                    withCredentials([sshUserPrivateKey(credentialsId: env.PEM_KEY_CREDENTIALS_ID, keyFileVariable: 'SSH_KEY')]) {
+                        sh """
+                        # Copy the SSH key to a file in the workspace
+                        cp \$SSH_KEY ${keyFile}
+                        chmod 400 ${keyFile}
 
                         # Deploy the Docker container on EC2
-                        ssh -o StrictHostKeyChecking=no -i /tmp/aws-ec2-key.pem ec2-user@35.153.78.170 << 'EOF'
-                        docker pull ${ECR_REPO_URI}:latest
+                        ssh -o StrictHostKeyChecking=no -i ${keyFile} ec2-user@35.153.78.170 << EOF
+                        docker pull ${env.ECR_REPO_URI}:latest
                         docker stop counter_app || true
                         docker rm counter_app || true
-                        docker run -d --name counter_app -p ${DEPLOY_PORT}:8080 ${ECR_REPO_URI}:latest
+                        docker run -d --name counter_app -p ${DEPLOY_PORT}:8080 ${env.ECR_REPO_URI}:latest
                         EOF
-                        '''
+
+                        # Remove the key file
+                        rm ${keyFile}
+                        """
                     }
                 }
             }
