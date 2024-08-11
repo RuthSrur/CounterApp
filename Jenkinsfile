@@ -4,9 +4,10 @@ pipeline {
         AWS_REGION = 'us-east-1'
         AWS_CREDENTIALS_ID = 'aws-credentials-id'
         ECR_REPO_URI_CREDENTIALS_ID = 'ecr-repo-uri-id'
+        PEM_KEY_CREDENTIALS_ID = 'aws-ec2-key' // Update with your actual secret text ID
         AWS_CLI_DIR = "${env.JENKINS_HOME}/aws-cli"
         PATH = "${env.PATH}:${AWS_CLI_DIR}/bin"
-        DEPLOY_PORT = '8081'  
+        DEPLOY_PORT = '8081'
     }
     stages {
         stage('Check and Install AWS CLI') {
@@ -68,7 +69,8 @@ pipeline {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: env.AWS_CREDENTIALS_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
-                                     string(credentialsId: env.ECR_REPO_URI_CREDENTIALS_ID, variable: 'ECR_REPO_URI')]) {
+                                     string(credentialsId: env.ECR_REPO_URI_CREDENTIALS_ID, variable: 'ECR_REPO_URI'),
+                                     string(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY_BASE64')]) {
                         sh '''
                         aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID  
                         aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
@@ -92,15 +94,18 @@ pipeline {
                 sh "docker push ${env.ECR_REPO_URI}:latest"
             }
         }
-        
+
         stage('Deploy Docker Container on EC2') {
             steps {
                 script {
-                    withCredentials([file(credentialsId: 'aws-ec2-key', variable: 'PEM_KEY_FILE')]) {
+                    withCredentials([string(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY_BASE64')]) {
                         sh '''
-                        # Decode the PEM file and use it to SSH into the EC2 instance
-                        chmod 400 $PEM_KEY_FILE
-                        ssh -o StrictHostKeyChecking=no -i $PEM_KEY_FILE ec2-user@35.153.78.170 << 'EOF'
+                        # Decode the PEM key
+                        echo $PEM_KEY_BASE64 | base64 --decode > /tmp/aws-ec2-key.pem
+                        chmod 400 /tmp/aws-ec2-key.pem
+                        
+                        # Deploy the Docker container on EC2
+                        ssh -o StrictHostKeyChecking=no -i /tmp/aws-ec2-key.pem ec2-user@35.153.78.170/ << 'EOF'
                         docker pull ${ECR_REPO_URI}:latest
                         docker stop counter_app || true
                         docker rm counter_app || true
