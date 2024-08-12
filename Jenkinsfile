@@ -101,8 +101,8 @@ pipeline {
                     def keyFile = "${env.WORKSPACE}/aws-ec2-key.pem"
                     withCredentials([string(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY')]) {
                         sh """
-                        # Write the PEM key to a file
-                        echo "\$PEM_KEY" > ${keyFile}
+                        # Ensure the PEM key is correctly formatted
+                        echo "$PEM_KEY" | sed 's/\\\\n/\\n/g' > ${keyFile}
                         chmod 400 ${keyFile}
 
                         # Debug: Check key file header
@@ -120,16 +120,6 @@ pipeline {
                         # Debug: Check key fingerprint
                         echo "Key fingerprint:"
                         ssh-keygen -l -f ${keyFile} || echo "Failed to read key fingerprint"
-
-                        # Debug: Check key content (partially)
-                        echo "First few lines of the key file:"
-                        head -n 3 ${keyFile}
-                        echo "Last few lines of the key file:"
-                        tail -n 3 ${keyFile}
-
-                        # Debug: Check if EC2 instance is reachable
-                        echo "Pinging EC2 instance:"
-                        ping -c 4 ${EC2_IP}
 
                         # Test SSH connection with verbose output
                         echo "Attempting SSH connection:"
@@ -151,7 +141,7 @@ pipeline {
                 }
             }
         }
-    }
+
     
     post {
         always {
