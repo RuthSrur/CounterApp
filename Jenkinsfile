@@ -94,22 +94,6 @@ pipeline {
                 sh "docker push ${env.ECR_REPO_URI}:latest"
             }
         }
-
-pipeline {
-    agent any
-    environment {
-        AWS_REGION = 'us-east-1'
-        AWS_CREDENTIALS_ID = 'aws-credentials-id'
-        ECR_REPO_URI_CREDENTIALS_ID = 'ecr-repo-uri-id'
-        PEM_KEY_CREDENTIALS_ID = 'aws-ec2-key'
-        AWS_CLI_DIR = "${env.JENKINS_HOME}/aws-cli"
-        PATH = "${env.PATH}:${AWS_CLI_DIR}/bin"
-        DEPLOY_PORT = '8081'
-        EC2_IP = '35.153.78.170'
-    }
-    stages {
-        // Other stages...
-
         stage('Deploy to EC2') {
             steps {
                 script {
@@ -142,16 +126,7 @@ pipeline {
                 }
             }
         }
-    }
-
-    post {
-        always {
-            cleanWs()
-        }
-    }
-}
-
-    
+    }   
     post {
         always {
             cleanWs()
