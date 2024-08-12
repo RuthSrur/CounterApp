@@ -97,27 +97,20 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
                 script {
-                    def keyFile = "${env.WORKSPACE}/aws-ec2-key.pem"
-                    withCredentials([string(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY')]) {
+                    withCredentials([file(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY_FILE')]) {
                         sh """
-                        # Write the PEM key to a file
-                        echo "\$PEM_KEY" > ${keyFile}
-                        chmod 400 ${keyFile}
-
                         # Stop any container running on port 8081
-                        ssh -o StrictHostKeyChecking=no -i ${keyFile} ec2-user@${EC2_IP} 'docker ps -q --filter "publish=8081" | xargs -r docker stop && docker ps -a -q --filter "publish=8081" | xargs -r docker rm'
+                        ssh -o StrictHostKeyChecking=no -i ${PEM_KEY_FILE} ec2-user@${EC2_IP} 'docker ps -q --filter "publish=8081" | xargs -r docker stop && docker ps -a -q --filter "publish=8081" | xargs -r docker rm'
 
                         # Run a new container with the Flask API on port 8081
-                        ssh -o StrictHostKeyChecking=no -i ${keyFile} ec2-user@${EC2_IP} 'docker run -d --name flask_api_app -p ${DEPLOY_PORT}:8080 ${env.ECR_REPO_URI}:latest'
-
-                        # Remove the key file
-                        rm ${keyFile}
+                        ssh -o StrictHostKeyChecking=no -i ${PEM_KEY_FILE} ec2-user@${EC2_IP} 'docker run -d --name flask_api_app -p ${DEPLOY_PORT}:8080 ${env.ECR_REPO_URI}:latest'
                         """
                     }
                 }
             }
         }
-    }    
+    }
+    
     post {
         always {
             cleanWs()
