@@ -101,12 +101,21 @@ pipeline {
                     def keyFile = "${env.WORKSPACE}/aws-ec2-key.pem"
                     withCredentials([string(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY')]) {
                         sh """
-                        # Write the PEM key to a file
-                        echo "\$PEM_KEY" > ${keyFile}
+                        # Write the PEM key to a file (assuming it's base64 encoded)
+                        echo "\$PEM_KEY" | base64 -d > ${keyFile}
                         chmod 400 ${keyFile}
 
-                        # Deploy to EC2
-                        ssh -o StrictHostKeyChecking=no -i ${keyFile} ec2-user@${EC2_IP} << EOF
+                        # Debug: Check key file
+                        echo "First line of key file:"
+                        sed -n '1p' ${keyFile}
+                        echo "Key file permissions:"
+                        ls -l ${keyFile}
+
+                        # Try to use ssh-keygen to validate the key
+                        ssh-keygen -y -f ${keyFile} || echo "Failed to read private key"
+
+                        # Deploy to EC2 with verbose SSH output
+                        ssh -v -o StrictHostKeyChecking=no -i ${keyFile} ec2-user@${EC2_IP} << EOF
                         # Pull the latest image
                         docker pull ${env.ECR_REPO_URI}:latest
 
@@ -129,8 +138,9 @@ pipeline {
             }
         }
     }
-   
-        post {
+    
+    
+    post {
         always {
             cleanWs()
         }
