@@ -95,45 +95,46 @@ pipeline {
             }
         }
 
+pipeline {
+    agent any
+    environment {
+        AWS_REGION = 'us-east-1'
+        AWS_CREDENTIALS_ID = 'aws-credentials-id'
+        ECR_REPO_URI_CREDENTIALS_ID = 'ecr-repo-uri-id'
+        PEM_KEY_CREDENTIALS_ID = 'aws-ec2-key'
+        AWS_CLI_DIR = "${env.JENKINS_HOME}/aws-cli"
+        PATH = "${env.PATH}:${AWS_CLI_DIR}/bin"
+        DEPLOY_PORT = '8081'
+        EC2_IP = '35.153.78.170'
+    }
+    stages {
+        // Other stages...
+
         stage('Deploy to EC2') {
             steps {
                 script {
                     def keyFile = "${env.WORKSPACE}/aws-ec2-key.pem"
-                    withCredentials([string(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY')]) {
+                    withCredentials([file(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY_FILE')]) {
                         sh """
-                        # Ensure the PEM key is correctly formatted
-                        echo "$PEM_KEY" | sed 's/\\\\n/\\n/g' > ${keyFile}
+                        # Copy the key file to a usable location
+                        cp ${PEM_KEY_FILE} ${keyFile}
                         chmod 400 ${keyFile}
 
-                        # Debug: Check key file header
+                        # Check the key file format
                         echo "Key file header:"
                         head -n 1 ${keyFile}
-
-                        # Check if the key starts with the correct header
-                        if grep -q "BEGIN RSA PRIVATE KEY" ${keyFile}; then
-                            echo "Key file appears to have the correct header"
-                        else
-                            echo "Key file does not have the correct header"
-                            exit 1
-                        fi
-
-                        # Debug: Check key fingerprint
+                        
                         echo "Key fingerprint:"
                         ssh-keygen -l -f ${keyFile} || echo "Failed to read key fingerprint"
+                        
+                        # Check if EC2 instance is reachable
+                        echo "Pinging EC2 instance:"
+                        ping -c 4 ${EC2_IP} || echo "Ping failed"
 
-                        # Test SSH connection with verbose output
+                        # Attempt SSH connection
                         echo "Attempting SSH connection:"
-                        ssh -v -o StrictHostKeyChecking=no -i ${keyFile} ec2-user@${EC2_IP} 'echo "SSH connection successful"'
-
-                        # If SSH connection is successful, proceed with deployment
-                        if [ \$? -eq 0 ]; then
-                            echo "SSH connection successful. Proceeding with deployment..."
-                            # Your deployment commands here
-                        else
-                            echo "SSH connection failed. Deployment aborted."
-                            exit 1
-                        fi
-
+                        ssh -v -o StrictHostKeyChecking=no -i ${keyFile} ec2-user@${EC2_IP} echo "SSH connection successful"
+                        
                         # Remove the key file
                         rm ${keyFile}
                         """
@@ -142,6 +143,14 @@ pipeline {
             }
         }
     }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}
+
     
     post {
         always {
