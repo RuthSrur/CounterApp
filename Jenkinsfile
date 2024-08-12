@@ -8,6 +8,7 @@ pipeline {
         AWS_CLI_DIR = "${env.JENKINS_HOME}/aws-cli"
         PATH = "${env.PATH}:${AWS_CLI_DIR}/bin"
         DEPLOY_PORT = '8081'
+        EC2_IP = '35.153.78.170'
     }
     stages {
         stage('Check and Install AWS CLI') {
@@ -94,7 +95,7 @@ pipeline {
             }
         }
 
-        stage('Deploy Docker Container on EC2') {
+        stage('Deploy to EC2') {
             steps {
                 script {
                     def keyFile = "${env.WORKSPACE}/aws-ec2-key.pem"
@@ -104,28 +105,21 @@ pipeline {
                         echo "\$PEM_KEY" > ${keyFile}
                         chmod 400 ${keyFile}
 
-                        # Debug: Check the key file content (be careful not to expose the full key)
-                        echo "Key file content:"
-                        sed -n '1p; \$p' ${keyFile}
+                        # Deploy to EC2
+                        ssh -o StrictHostKeyChecking=no -i ${keyFile} ec2-user@${EC2_IP} << EOF
+                        # Pull the latest image
+                        docker pull ${env.ECR_REPO_URI}:latest
 
-                        # Try to use ssh-keygen to validate the key
-                        ssh-keygen -y -f ${keyFile} || echo "Failed to read private key"
+                        # Stop and remove the existing container if it exists
+                        docker stop counter_app || true
+                        docker rm counter_app || true
 
-                        # Attempt SSH connection with verbose output
-                        ssh -v -o StrictHostKeyChecking=no -i ${keyFile} ec2-user@35.153.78.170 'echo "SSH connection successful"'
+                        # Run the new container
+                        docker run -d --name counter_app -p ${DEPLOY_PORT}:8080 ${env.ECR_REPO_URI}:latest
 
-                        # If SSH connection is successful, proceed with deployment
-                        if [ \$? -eq 0 ]; then
-                            ssh -o StrictHostKeyChecking=no -i ${keyFile} ec2-user@35.153.78.170 << EOF
-                            docker pull ${env.ECR_REPO_URI}:latest
-                            docker stop counter_app || true
-                            docker rm counter_app || true
-                            docker run -d --name counter_app -p ${DEPLOY_PORT}:8080 ${env.ECR_REPO_URI}:latest
-                            EOF
-                        else
-                            echo "SSH connection failed. Deployment aborted."
-                            exit 1
-                        fi
+                        # Clean up old images
+                        docker image prune -f
+                        EOF
 
                         # Remove the key file
                         rm ${keyFile}
@@ -135,7 +129,8 @@ pipeline {
             }
         }
     }
-    post {
+   
+        post {
         always {
             cleanWs()
         }
