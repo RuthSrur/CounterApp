@@ -98,27 +98,18 @@ pipeline {
             steps {
                 script {
                     def keyFile = "${env.WORKSPACE}/aws-ec2-key.pem"
-                    withCredentials([file(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY_FILE')]) {
+                    withCredentials([string(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY')]) {
                         sh """
-                        # Copy the key file to a usable location
-                        cp ${PEM_KEY_FILE} ${keyFile}
+                        # Write the PEM key to a file
+                        echo "\$PEM_KEY" > ${keyFile}
                         chmod 400 ${keyFile}
 
-                        # Check the key file format
-                        echo "Key file header:"
-                        head -n 1 ${keyFile}
-                        
-                        echo "Key fingerprint:"
-                        ssh-keygen -l -f ${keyFile} || echo "Failed to read key fingerprint"
-                        
-                        # Check if EC2 instance is reachable
-                        echo "Pinging EC2 instance:"
-                        ping -c 4 ${EC2_IP} || echo "Ping failed"
+                        # Stop any container running on port 8081
+                        ssh -o StrictHostKeyChecking=no -i ${keyFile} ec2-user@${EC2_IP} 'docker ps -q --filter "publish=8081" | xargs -r docker stop && docker ps -a -q --filter "publish=8081" | xargs -r docker rm'
 
-                        # Attempt SSH connection
-                        echo "Attempting SSH connection:"
-                        ssh -v -o StrictHostKeyChecking=no -i ${keyFile} ec2-user@${EC2_IP} echo "SSH connection successful"
-                        
+                        # Run a new container with the Flask API on port 8081
+                        ssh -o StrictHostKeyChecking=no -i ${keyFile} ec2-user@${EC2_IP} 'docker run -d --name flask_api_app -p ${DEPLOY_PORT}:8080 ${env.ECR_REPO_URI}:latest'
+
                         # Remove the key file
                         rm ${keyFile}
                         """
@@ -126,7 +117,7 @@ pipeline {
                 }
             }
         }
-    }   
+        
     post {
         always {
             cleanWs()
