@@ -101,45 +101,23 @@ pipeline {
                     def keyFile = "${env.WORKSPACE}/aws-ec2-key.pem"
                     withCredentials([string(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY')]) {
                         sh """
-                        # Write the PEM key to a file (assuming it's stored as plain text)
+                        # Write the PEM key to a file
                         echo "\$PEM_KEY" > ${keyFile}
                         chmod 400 ${keyFile}
 
-                        # Debug: Check key file (only show the first line for security)
-                        echo "First line of key file:"
-                        sed -n '1p' ${keyFile}
-                        echo "Key file permissions:"
-                        ls -l ${keyFile}
+                        # Debug: Check key file header
+                        echo "Key file header:"
+                        head -n 1 ${keyFile}
 
-                        # Try to use ssh-keygen to validate the key
-                        ssh-keygen -y -f ${keyFile} || echo "Failed to read private key"
-
-                        # Test SSH connection
-                        ssh -o StrictHostKeyChecking=no -i ${keyFile} ec2-user@${EC2_IP} 'echo "SSH connection successful"'
-
-                        # If SSH connection is successful, proceed with deployment
-                        if [ \$? -eq 0 ]; then
-                            ssh -o StrictHostKeyChecking=no -i ${keyFile} ec2-user@${EC2_IP} << EOF
-                            # Pull the latest image
-                            docker pull ${env.ECR_REPO_URI}:latest
-
-                            # Stop and remove the existing container if it exists
-                            docker stop counter_app || true
-                            docker rm counter_app || true
-
-                            # Run the new container
-                            docker run -d --name counter_app -p ${DEPLOY_PORT}:8080 ${env.ECR_REPO_URI}:latest
-
-                            # Clean up old images
-                            docker image prune -f
-                        EOF
+                        # Check if the key starts with the correct header
+                        if grep -q "BEGIN RSA PRIVATE KEY" ${keyFile}; then
+                            echo "Key file appears to have the correct header"
                         else
-                            echo "SSH connection failed. Deployment aborted."
+                            echo "Key file does not have the correct header"
                             exit 1
                         fi
 
-                        # Remove the key file
-                        rm ${keyFile}
+                        # Rest of your deployment script...
                         """
                     }
                 }
