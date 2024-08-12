@@ -117,7 +117,35 @@ pipeline {
                             exit 1
                         fi
 
-                        # Rest of your deployment script...
+                        # Debug: Check key fingerprint
+                        echo "Key fingerprint:"
+                        ssh-keygen -l -f ${keyFile} || echo "Failed to read key fingerprint"
+
+                        # Debug: Check key content (partially)
+                        echo "First few lines of the key file:"
+                        head -n 3 ${keyFile}
+                        echo "Last few lines of the key file:"
+                        tail -n 3 ${keyFile}
+
+                        # Debug: Check if EC2 instance is reachable
+                        echo "Pinging EC2 instance:"
+                        ping -c 4 ${EC2_IP}
+
+                        # Test SSH connection with verbose output
+                        echo "Attempting SSH connection:"
+                        ssh -v -o StrictHostKeyChecking=no -i ${keyFile} ec2-user@${EC2_IP} 'echo "SSH connection successful"'
+
+                        # If SSH connection is successful, proceed with deployment
+                        if [ \$? -eq 0 ]; then
+                            echo "SSH connection successful. Proceeding with deployment..."
+                            # Your deployment commands here
+                        else
+                            echo "SSH connection failed. Deployment aborted."
+                            exit 1
+                        fi
+
+                        # Remove the key file
+                        rm ${keyFile}
                         """
                     }
                 }
