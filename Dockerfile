@@ -23,7 +23,7 @@ COPY templates/ templates/
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-EXPOSE 5000
+EXPOSE 8080
 
 # Define environment variables
 ENV FLASK_APP=main.py
