@@ -8,7 +8,7 @@ pipeline {
         AWS_CLI_DIR = "${env.JENKINS_HOME}/aws-cli"
         PATH = "${env.PATH}:${AWS_CLI_DIR}/bin"
         DEPLOY_PORT = '8081'
-        EC2_IP = '35.153.78.170'
+        EC2_IP = '54.234.43.41'
     }
     stages {
         stage('Check and Install AWS CLI') {
@@ -110,7 +110,7 @@ pipeline {
             }
         }
     }
-    
+
     post {
         always {
             cleanWs()
