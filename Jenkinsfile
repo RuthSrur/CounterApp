@@ -99,14 +99,16 @@ pipeline {
                 script {
                     withCredentials([file(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY_FILE')]) {
                         sh """
-                        # Stop and remove any existing container with the name 'flask_api_app'
-                        ssh -o StrictHostKeyChecking=no -i ${PEM_KEY_FILE} ec2-user@${EC2_IP} \\
-                        'docker ps -q --filter "name=flask_api_app" | xargs -r docker stop && \\
-                        docker ps -a -q --filter "name=flask_api_app" | xargs -r docker rm'
+                        # Stop any existing container running on port 8081
+                        ssh -o StrictHostKeyChecking=no -i ${PEM_KEY_FILE} ec2-user@${EC2_IP} '
+                            docker ps -q --filter "publish=8081" | xargs -r docker stop && \
+                            docker ps -a -q --filter "publish=8081" | xargs -r docker rm
+                        '
 
-                        # Run a new container with the Flask API on port 8081 (host) mapping to 8080 (container)
-                        ssh -o StrictHostKeyChecking=no -i ${PEM_KEY_FILE} ec2-user@${EC2_IP} \\
-                        'docker run -d --name flask_api_app -p 8081:8080 ${env.ECR_REPO_URI}:latest'
+                        # Run a new container with the Flask API on port 8081
+                        ssh -o StrictHostKeyChecking=no -i ${PEM_KEY_FILE} ec2-user@${EC2_IP} '
+                            docker run -d --name flask_api_app -p 8081:8080 ${env.ECR_REPO_URI}:latest
+                        '
                         """
                     }
                 }
