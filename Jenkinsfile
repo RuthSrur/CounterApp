@@ -46,7 +46,7 @@ pipeline {
 
         stage('Run Docker Container') {
             steps {
-                sh "docker run -d --name counter_app -p ${DEPLOY_PORT}:8080 counter:1.0"
+                sh "docker run -d --name counter_app -p ${DEPLOY_PORT}:8081 counter:1.0"
                 sleep 10
             }
         }
@@ -106,7 +106,7 @@ pipeline {
 
                     # Run a new container with the Flask API on port 8081 (host) mapping to 8080 (container)
                     ssh -o StrictHostKeyChecking=no -i ${PEM_KEY_FILE} ec2-user@${EC2_IP} \\
-                    'docker run -d --name flask_api_app -p 8081:8080 ${env.ECR_REPO_URI}:latest'
+                    'docker run -d --name flask_api_app -p 8081:8081 ${env.ECR_REPO_URI}:latest'
                     """
                 }
             }
