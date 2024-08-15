@@ -31,7 +31,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build . -t counter:1.0'
+                sh 'docker build --no-cache -t counter:1.0 .'
             }
         }
 
