@@ -27,8 +27,8 @@ EXPOSE 8081
 
 # Define environment variables
 ENV FLASK_APP=main.py
-ENV FLASK_RUN_HOST=0.0.0.0
 ENV FLASK_RUN_PORT=8081
+ENV FLASK_RUN_HOST="0.0.0.0"
 
 # Run application
 CMD ["flask", "run"]
