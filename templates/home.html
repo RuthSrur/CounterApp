@@ -10,7 +10,7 @@
 
 <body>
     <div class="container">
-        <h1 class="main-title">Counter Service Application</h1>
+        <h1 class="main-title">Welcome To Counter Application</h1>
         {% if counter == null and message != null %}
             <h3>Successfully incremented the counter</h3>
         {% elif counter == null and message == null %}
@@ -19,7 +19,7 @@
             <h3>Counter value: {{ counter }}</h3>
         {% endif %}
         <form action="/increment" method="post" class="form-button">
-            <button type="submit" class="btn post-btn">Increment</button>
+            <button type="submit" class="btn post-btn">Click to add</button>
         </form>
         <!-- Uncomment to use the GET button -->
         <!--
