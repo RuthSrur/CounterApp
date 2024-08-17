@@ -1,26 +1,32 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Counter Service Application</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
     <div class="container">
         <h1 class="main-title">Counter Service Application</h1>
-        {% if counter == null and message != null : %}
-        <h3>Successfully increment the counter</h3>
-        {%elif counter == null and message == null %}
-        <h3>HOME</h3>
+        {% if counter == null and message != null %}
+            <h3>Successfully incremented the counter</h3>
+        {% elif counter == null and message == null %}
+            <h3>HOME</h3>
         {% else %}
-        <h3>Counter value: {{ counter }}</h3>
+            <h3>Counter value: {{ counter }}</h3>
         {% endif %}
         <form action="/increment" method="post" class="form-button">
             <button type="submit" class="btn post-btn">Increment</button>
         </form>
-        <!--<form action="/get" method="get" class="form-button">
-            <button type="submit" class="btn post-btn">Get</button>
-        </form> -->
+        <!-- Uncomment to use the GET button -->
+        <!--
+        <form action="/get" method="get" class="form-button">
+            <button type="submit" class="btn">Get</button>
+        </form>
+        -->
     </div>
 </body>
 </html>

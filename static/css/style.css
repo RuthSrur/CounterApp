@@ -1,49 +1,52 @@
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
+    font-family: 'Roboto', Arial, sans-serif;
+    background: linear-gradient(to right, #f8f9fa, #e9ecef);
     margin: 0;
     padding: 0;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
+    color: #212529;
 }
 
 .container {
     text-align: center;
-    background-color: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    width: 50%;
-    max-width: 600px;
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+    width: 80%;
+    max-width: 500px;
 }
 
 .main-title {
-    color: #333;
-    font-size: 24px;
-    margin-bottom: 10px;
-}
-
-h2 {
-    color: #555;
+    color: #343a40;
+    font-size: 28px;
+    font-weight: 700;
     margin-bottom: 20px;
 }
 
+h3 {
+    color: #495057;
+    font-size: 18px;
+    margin-bottom: 25px;
+}
+
 .form-button {
-    margin: 10px 0;
+    margin: 15px 0;
 }
 
 .btn {
     background-color: #007bff;
     color: white;
     border: none;
-    padding: 10px 20px;
-    text-decoration: none;
+    padding: 12px 25px;
     font-size: 16px;
     border-radius: 5px;
     cursor: pointer;
-    width: 100px;
+    transition: background-color 0.3s ease;
+    width: 150px;
 }
 
 .post-btn {
@@ -51,5 +54,9 @@ h2 {
 }
 
 .btn:hover {
-    opacity: 0.9;
+    background-color: #0056b3;
+}
+
+.post-btn:hover {
+    background-color: #218838;
 }
