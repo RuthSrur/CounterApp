@@ -8,7 +8,7 @@ pipeline {
         AWS_CLI_DIR = "${env.JENKINS_HOME}/aws-cli"
         PATH = "${env.PATH}:${AWS_CLI_DIR}/bin"
         DEPLOY_PORT = '8081'
-        EC2_IP = '54.234.43.41'
+        EC2_IP = '3.93.3.192'
     }
     stages {
         stage('Check and Install AWS CLI') {
@@ -39,6 +39,7 @@ pipeline {
             steps {
                 sh '''
                 docker ps -q -f name=counter_app | xargs -r docker stop
+                sleep 5  # Wait to ensure the port is freed up
                 docker ps -a -q -f name=counter_app | xargs -r docker rm
                 '''
             }
