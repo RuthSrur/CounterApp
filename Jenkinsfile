@@ -95,7 +95,13 @@ pipeline {
                 sh "docker push ${env.ECR_REPO_URI}:latest"
             }
         }
+
         stage('Deploy to EC2') {
+            when {
+                not {
+                    branch 'develop'
+                }
+            }
             steps {
                 script {
                     withCredentials([file(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY_FILE')]) {
@@ -117,7 +123,7 @@ pipeline {
                 }
             }
         }
-}
+    }
     post {
         always {
             cleanWs()
