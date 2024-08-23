@@ -29,41 +29,38 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build and Run Docker Container') {
             steps {
-                sh 'docker build --no-cache -t counter:1.0 .'
+                script {
+                    // Build the Docker image
+                    sh 'docker build --no-cache -t counter:1.0 .'
+
+                    // Stop and remove existing container
+                    sh '''
+                    docker ps -q -f name=counter_app | xargs -r docker stop
+                    sleep 5  # Wait to ensure the port is freed up
+                    docker ps -a -q -f name=counter_app | xargs -r docker rm
+                    '''
+
+                    // Run the new Docker container
+                    sh "docker run -d --name counter_app -p ${DEPLOY_PORT}:8081 counter:1.0"
+                    sleep 10
+                }
             }
         }
 
-        stage('Stop and Remove Existing Container') {
+        stage('Run Tests and Cleanup') {
             steps {
-                sh '''
-                docker ps -q -f name=counter_app | xargs -r docker stop
-                sleep 5  # Wait to ensure the port is freed up
-                docker ps -a -q -f name=counter_app | xargs -r docker rm
-                '''
-            }
-        }
+                script {
+                    // Run Unit Tests
+                    sh 'docker exec counter_app python3 -m unittest test_main'
 
-        stage('Run Docker Container') {
-            steps {
-                sh "docker run -d --name counter_app -p ${DEPLOY_PORT}:8081 counter:1.0"
-                sleep 10
-            }
-        }
-
-        stage('Run Unit Tests') {
-            steps {
-                sh 'docker exec counter_app python3 -m unittest test_main'
-            }
-        }
-
-        stage('Cleanup') {
-            steps {
-                sh '''
-                docker stop counter_app || true
-                docker rm counter_app || true
-                '''
+                    // Cleanup: Stop and remove the Docker container
+                    sh '''
+                    docker stop counter_app || true
+                    docker rm counter_app || true
+                    '''
+                }
             }
         }
 
