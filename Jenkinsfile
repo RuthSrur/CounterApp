@@ -8,7 +8,7 @@ pipeline {
         AWS_CLI_DIR = "${env.JENKINS_HOME}/aws-cli"
         PATH = "${env.PATH}:${AWS_CLI_DIR}/bin"
         DEPLOY_PORT = '8081'
-        EC2_IP = '3.93.3.192'
+        EC2_IP = '107.21.168.54'
     }
     stages {
         stage('Check and Install AWS CLI') {
@@ -67,7 +67,36 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
+        stage('Login to ECR') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: env.AWS_CREDENTIALS_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
+                                     string(credentialsId: env.ECR_REPO_URI_CREDENTIALS_ID, variable: 'ECR_REPO_URI')]) {
+                        sh '''
+                        aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID  
+                        aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+                        aws configure set region $AWS_REGION
+                        aws ecr-public get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
+                        '''
+                        env.ECR_REPO_URI = ECR_REPO_URI
+                    }
+                }
+            }
+        }
+
+        stage('Tag Docker Image') {
+            steps {
+                sh "docker tag counter:1.0 ${env.ECR_REPO_URI}:latest"
+            }
+        }
+
+        stage('Push Docker Image to ECR') {
+            steps {
+                sh "docker push ${env.ECR_REPO_URI}:latest"
+            }
+        }
+
+        stage('Deploy to EC2') {
             when {
                 not {
                     branch 'develop'
@@ -75,30 +104,20 @@ pipeline {
             }
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: env.AWS_CREDENTIALS_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
-                                     string(credentialsId: env.ECR_REPO_URI_CREDENTIALS_ID, variable: 'ECR_REPO_URI'),
-                                     file(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY_FILE')]) {
+                    withCredentials([file(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY_FILE')]) {
                         sh """
-                        # Configure AWS CLI
-                        aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID  
-                        aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-                        aws configure set region $AWS_REGION
-
-                        # Login to ECR
-                        aws ecr-public get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
-
-                        # Tag Docker Image
-                        docker tag counter:1.0 ${ECR_REPO_URI}:latest
-
-                        # Push Docker Image to ECR
-                        docker push ${ECR_REPO_URI}:latest
-
-                        # Deploy to EC2
+                        # Stop and remove any existing container with the name 'flask_api_app'
                         ssh -o StrictHostKeyChecking=no -i ${PEM_KEY_FILE} ec2-user@${EC2_IP} \\
                         'docker ps -q --filter "name=flask_api_app" | xargs -r docker stop && \\
-                        docker ps -a -q --filter "name=flask_api_app" | xargs -r docker rm && \\
-                        docker pull ${ECR_REPO_URI}:latest && \\
-                        docker run -d --name flask_api_app -p 8081:8081 ${ECR_REPO_URI}:latest'
+                        docker ps -a -q --filter "name=flask_api_app" | xargs -r docker rm'
+
+                        # Pull the latest image from ECR
+                        ssh -o StrictHostKeyChecking=no -i ${PEM_KEY_FILE} ec2-user@${EC2_IP} \\
+                        'docker pull ${env.ECR_REPO_URI}:latest'
+
+                        # Run a new container with the Flask API on port 8081 (host) mapping to 8081 (container)
+                        ssh -o StrictHostKeyChecking=no -i ${PEM_KEY_FILE} ec2-user@${EC2_IP} \\
+                        'docker run -d --name flask_api_app -p 8081:8081 ${env.ECR_REPO_URI}:latest'
                         """
                     }
                 }
