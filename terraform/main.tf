@@ -59,21 +59,21 @@ resource "aws_security_group" "instance_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["93.173.236.169/32"]
+    cidr_blocks = ["127.0.0.1/32"]
   }
 
   ingress {
-    from_port   = 22
-    to_port     = 22
+    from_port   = 8081
+    to_port     = 8081
     protocol    = "tcp"
-    cidr_blocks = ["18.206.107.24/29"]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
-    cidr_blocks = ["93.173.236.169/32"]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
