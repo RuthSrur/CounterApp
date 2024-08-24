@@ -59,14 +59,20 @@ module "ec2_instance" {
                   docker:dind \
                   --storage-driver overlay2
 
-                # Create Dockerfile for Jenkins with Docker
+                # Create Dockerfile for Jenkins with Docker and AWS CLI
                 cat <<-EOD > Dockerfile
                 FROM jenkins/jenkins:2.452.3-jdk17
                 USER root
-                RUN apt-get update && apt-get install -y lsb-release
+                RUN apt-get update && apt-get install -y lsb-release curl unzip
                 RUN curl -fsSLo /usr/share/keyrings/docker-archive-keyring.asc https://download.docker.com/linux/debian/gpg
                 RUN echo "deb [arch=\$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.asc] https://download.docker.com/linux/debian \$(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
                 RUN apt-get update && apt-get install -y docker-ce-cli
+                
+                # Install AWS CLI
+                RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+                    unzip awscliv2.zip && \
+                    ./aws/install && \
+                    rm -rf awscliv2.zip aws
                 USER jenkins
                 EOD
 
