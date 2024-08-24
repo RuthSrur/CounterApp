@@ -17,7 +17,23 @@ pipeline {
                     def awsCliInstalled = sh(script: "if [ -x ${AWS_CLI_DIR}/bin/aws ]; then ${AWS_CLI_DIR}/bin/aws --version; else echo 'not installed'; fi", returnStdout: true).trim()
                     if (awsCliInstalled.contains('aws-cli')) {
                         echo "AWS CLI already installed: ${awsCliInstalled}"
+                        
+                        // Check if AWS CLI needs to be updated
+                        sh '''
+                        if [ -d ${AWS_CLI_DIR}/v2 ]; then
+                            echo "AWS CLI is already installed. Updating..."
+                            ./aws/install --update -i ${AWS_CLI_DIR} -b ${AWS_CLI_DIR}/bin
+                        else
+                            echo "AWS CLI is installed but not in the expected directory. Reinstalling..."
+                            rm -rf ${AWS_CLI_DIR}  # Remove the existing installation
+                            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                            unzip awscliv2.zip
+                            ./aws/install -i ${AWS_CLI_DIR} -b ${AWS_CLI_DIR}/bin
+                        fi
+                        aws --version
+                        '''
                     } else {
+                        // Install AWS CLI
                         sh '''
                         curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
                         unzip awscliv2.zip
@@ -28,6 +44,7 @@ pipeline {
                 }
             }
         }
+
 
         stage('Build Docker Image') {
             steps {
