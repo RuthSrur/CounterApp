@@ -47,36 +47,7 @@ pipeline {
             }
         }
 
-        stage('Login to ECR') {
-            steps {
-                script {
-                    withCredentials([usernamePassword(credentialsId: env.AWS_CREDENTIALS_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
-                                     string(credentialsId: env.ECR_REPO_URI_CREDENTIALS_ID, variable: 'ECR_REPO_URI')]) {
-                        sh '''
-                        aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID  
-                        aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-                        aws configure set region $AWS_REGION
-                        aws ecr-public get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
-                        '''
-                        env.ECR_REPO_URI = ECR_REPO_URI
-                    }
-                }
-            }
-        }
-
-        stage('Tag Docker Image') {
-            steps {
-                sh "docker tag counter:1.0 ${env.ECR_REPO_URI}:latest"
-            }
-        }
-
-        stage('Push Docker Image to ECR') {
-            steps {
-                sh "docker push ${env.ECR_REPO_URI}:latest"
-            }
-        }
-
-        stage('Deploy to EC2') {
+        stage('Deploy') {
             when {
                 not {
                     branch 'develop'
@@ -84,7 +55,27 @@ pipeline {
             }
             steps {
                 script {
-                    withCredentials([file(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY_FILE')]) {
+                    withCredentials([
+                        usernamePassword(credentialsId: env.AWS_CREDENTIALS_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
+                        string(credentialsId: env.ECR_REPO_URI_CREDENTIALS_ID, variable: 'ECR_REPO_URI'),
+                        file(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY_FILE')
+                    ]) {
+                        // Login to ECR
+                        sh '''
+                        aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID  
+                        aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+                        aws configure set region $AWS_REGION
+                        aws ecr-public get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
+                        '''
+                        env.ECR_REPO_URI = ECR_REPO_URI
+
+                        // Tag and Push Docker Image
+                        sh """
+                        docker tag counter:1.0 ${env.ECR_REPO_URI}:latest
+                        docker push ${env.ECR_REPO_URI}:latest
+                        """
+
+                        // Deploy to EC2
                         sh """
                         # Stop and remove any existing container with the name 'flask_api_app'
                         ssh -o StrictHostKeyChecking=no -i ${PEM_KEY_FILE} ec2-user@${EC2_IP} \\
