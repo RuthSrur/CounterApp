@@ -9,38 +9,31 @@ pipeline {
         EC2_IP = '3.92.68.16'
     }
     stages {
-        stage('Build Docker Image') {
-            steps {
-                sh 'docker build --no-cache -t counter:1.0 .'
-            }
-        }
-
-        stage('Stop and Remove Existing Container') {
+        stage('Build') {
             steps {
                 sh '''
+                # Stop and remove existing container
                 docker ps -q -f name=counter_app | xargs -r docker stop
                 sleep 5  # Wait to ensure the port is freed up
                 docker ps -a -q -f name=counter_app | xargs -r docker rm
+
+                # Build Docker Image
+                docker build --no-cache -t counter:1.0 .
+
+                # Run Docker Container
+                docker run -d --name counter_app -p ${DEPLOY_PORT}:8081 counter:1.0
+                sleep 10
                 '''
             }
         }
 
-        stage('Run Docker Container') {
-            steps {
-                sh "docker run -d --name counter_app -p ${DEPLOY_PORT}:8081 counter:1.0"
-                sleep 10
-            }
-        }
-
-        stage('Run Unit Tests') {
-            steps {
-                sh 'docker exec counter_app python3 -m unittest test_main'
-            }
-        }
-
-        stage('Cleanup') {
+        stage('Unit Tests') {
             steps {
                 sh '''
+                # Run Unit Tests
+                docker exec counter_app python3 -m unittest test_main
+
+                # Cleanup after tests
                 docker stop counter_app || true
                 docker rm counter_app || true
                 '''
