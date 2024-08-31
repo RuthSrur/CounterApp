@@ -106,7 +106,7 @@ module "ec2_instance" {
                   exit 1
                 fi
                 EOF
-  name               = "DockerInstance"
+  name               = "CounterAppInstance"
 }
 
 output "instance_id" {
@@ -115,4 +115,21 @@ output "instance_id" {
 
 output "public_ip" {
   value = module.ec2_instance.public_ip
+}
+
+resource "local_file" "ansible_inventory" {
+  content  = <<EOF
+[web]
+${module.ec2_instance.public_ip} ansible_user=ec2-user ansible_ssh_private_key_file=/path/to/your/My-key.pem
+EOF
+  filename = "${path.module}/inventory.ini"
+}
+
+resource "null_resource" "ansible_deploy" {
+  provisioner "local-exec" {
+    command = "ansible-playbook -i ${local_file.ansible_inventory.filename} deploy_grafana.yml"
+    working_dir = "${path.module}"
+  }
+
+  depends_on = [module.ec2_instance, local_file.ansible_inventory]
 }

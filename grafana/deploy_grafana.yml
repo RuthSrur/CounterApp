@@ -1,0 +1,75 @@
+- name: Deploy Grafana and Prometheus
+  hosts: ec2_instances
+  become: yes
+  tasks:
+    - name: Install Docker
+      yum:
+        name: docker
+        state: present
+
+    - name: Start Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Install Docker Compose dependencies
+      yum:
+        name:
+          - curl
+          - python3
+        state: present
+
+    - name: Download Docker Compose
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-linux-x86_64"
+        dest: /usr/local/bin/docker-compose
+        mode: 'u+x'
+
+    - name: Verify Docker Compose installation
+      command: docker-compose --version
+
+    - name: Create directory for Grafana and Prometheus
+      file:
+        path: ~/CounterApp/grafana
+        state: directory
+
+    - name: Create docker-compose.yml
+      copy:
+        dest: ~/CounterApp/grafana/docker-compose.yml
+        content: |
+          version: '3'
+
+          services:
+            prometheus:
+              image: prom/prometheus:latest
+              container_name: prometheus
+              volumes:
+                - ./prometheus.yml:/etc/prometheus/prometheus.yml
+              ports:
+                - "9090:9090"
+
+            grafana:
+              image: grafana/grafana:latest
+              container_name: grafana
+              ports:
+                - "3000:3000"
+              depends_on:
+                - prometheus
+
+    - name: Create prometheus.yml
+      copy:
+        dest: ~/CounterApp/grafana/prometheus.yml
+        content: |
+          global:
+            scrape_interval: 15s
+
+          scrape_configs:
+            - job_name: 'flask_app'
+              static_configs:
+                - targets: ['flask_api_app:8081']
+
+    - name: Deploy Grafana and Prometheus with Docker Compose
+      command:
+        cmd: docker-compose up -d
+        chdir: ~/CounterApp/grafana
