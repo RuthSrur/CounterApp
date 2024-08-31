@@ -6,7 +6,7 @@ pipeline {
         ECR_REPO_URI_CREDENTIALS_ID = 'ecr-repo-uri-id'
         PEM_KEY_CREDENTIALS_ID = 'aws-ec2-key'
         DEPLOY_PORT = '8081'
-        EC2_IP = '3.92.68.16'
+        EC2_IP = '54.157.234.115'
     }
     stages {
         stage('Build') {
