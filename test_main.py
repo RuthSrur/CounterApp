@@ -18,11 +18,18 @@ class CounterAppTestCase(unittest.TestCase):
         self.assertIn(b'Counter Service Application', response.data)  # Checking if the response data contains 'Counter Service Application'
 
     def test_increment_counter(self):
-        response = self.app.post('/increment')  # Sending POST request to the /increment URL
+        response = self.app.post('/add')  # Sending POST request to the /add URL
         self.assertEqual(response.status_code, 200)  # Checking if the response status code is 200
-        self.assertIn(b'Counter Service Application', response.data)  # Checking if the response data contains 'Counter Service Application'
-        self.assertIn(b'1', response.data)  # Checking if the counter value is displayed as 1
+        self.assertIn(b'Counter value: 1', response.data)  # Checking if the counter value is displayed as 1
+
+    def test_subtract_counter(self):
+        # First increment the counter to ensure there's something to subtract
+        self.app.post('/add')  # Increment the counter to 1
+        response = self.app.post('/subtract')  # Sending POST request to the /subtract URL
+        self.assertEqual(response.status_code, 200)  # Checking if the response status code is 200
+        self.assertIn(b'Counter value: 0', response.data)  # Checking if the counter value is displayed as 0
 
 if __name__ == '__main__':
     unittest.main()
+
 
