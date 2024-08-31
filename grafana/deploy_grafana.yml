@@ -26,8 +26,15 @@
         dest: /usr/local/bin/docker-compose
         mode: 'u+x'
 
+    - name: Make Docker Compose executable
+      file:
+        path: /usr/local/bin/docker-compose
+        mode: 'u+x'
+
     - name: Verify Docker Compose installation
-      command: docker-compose --version
+      command: /usr/local/bin/docker-compose --version
+      register: docker_compose_version
+      failed_when: "'docker-compose' not in docker_compose_version.stdout"
 
     - name: Create directory for Grafana and Prometheus
       file:
@@ -71,5 +78,6 @@
 
     - name: Deploy Grafana and Prometheus with Docker Compose
       command:
-        cmd: docker-compose up -d
+        cmd: /usr/local/bin/docker-compose up -d
         chdir: ~/CounterApp/grafana
+        executable: /bin/bash
