@@ -10,6 +10,14 @@ services:
     networks:
       - monitoring_network
 
+  flask_api_app:
+    image: public.ecr.aws/k6k0r1y7/counter:latest
+    container_name: flask_api_app
+    ports:
+      - "8081:8081"
+    networks:
+      - monitoring_network    
+
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
@@ -22,5 +30,4 @@ services:
 
 networks:
   monitoring_network:
-    name: monitoring_network
-    driver: bridge
+    external: true

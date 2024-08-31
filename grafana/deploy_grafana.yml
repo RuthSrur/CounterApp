@@ -43,15 +43,15 @@
         path: ~/CounterApp/grafana
         state: directory
 
-    - name: Create Docker network
+    - name: Create Docker network if it doesn't exist
       command: docker network create monitoring_network
+      ignore_errors: yes  # Ignore errors if the network already exists
 
     - name: Create docker-compose.yml
       copy:
         dest: ~/CounterApp/grafana/docker-compose.yml
         content: |
           version: '3'
-
           services:
             prometheus:
               image: prom/prometheus:latest
@@ -83,10 +83,16 @@
         content: |
           global:
             scrape_interval: 15s
+          scrape_configs:
+            - job_name: 'flask_app'
+              static_configs:
+                - targets: ['flask_api_app:8081']
+            - job_name: 'prometheus'
+              static_configs:
+                - targets: ['localhost:9090']
 
     - name: Deploy Grafana and Prometheus with Docker Compose
       command:
         cmd: /usr/local/bin/docker-compose up -d
         chdir: ~/CounterApp/grafana
         executable: /bin/bash
-

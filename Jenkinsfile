@@ -20,13 +20,6 @@ pipeline {
 
                 # Build Docker Image
                 docker build --no-cache -t counter:1.0 .
-
-                # Create Docker network if it doesn't exist
-                docker network create ${DOCKER_NETWORK} || true
-
-                # Run Docker Container
-                docker run -d --name counter_app --network ${DOCKER_NETWORK} -p ${DEPLOY_PORT}:8081 counter:1.0
-                sleep 10
                 '''
             }
         }
@@ -34,11 +27,10 @@ pipeline {
             steps {
                 sh '''
                 # Run Unit Tests
-                docker exec counter_app python3 -m unittest test_main
+                docker run --name counter_app_test counter:1.0 python3 -m unittest test_main
 
                 # Cleanup after tests
-                docker stop counter_app || true
-                docker rm counter_app || true
+                docker rm counter_app_test || true
                 '''
             }
         }
@@ -62,7 +54,6 @@ pipeline {
                         aws configure set region $AWS_REGION
                         aws ecr-public get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
                         '''
-                        env.ECR_REPO_URI = ECR_REPO_URI
 
                         // Tag and Push Docker Image
                         sh """
@@ -72,7 +63,7 @@ pipeline {
 
                         // Deploy to EC2
                         sh """
-                        # Create Docker network if it doesn't exist
+                        # Ensure Docker network exists on EC2
                         ssh -o StrictHostKeyChecking=no -i ${PEM_KEY_FILE} ec2-user@${EC2_IP} \\
                         'docker network create ${DOCKER_NETWORK} || true'
 
