@@ -1,10 +1,16 @@
 from flask import Flask, request, render_template
 from prometheus_flask_exporter import PrometheusMetrics
+from prometheus_client import Counter
 
 app = Flask(__name__)
-metrics = PrometheusMetrics(app)  # to expose metrics
+metrics = PrometheusMetrics(app)
 
-counter = 0
+# Create a Prometheus Counter
+counter_metric = Counter('counter_value', 'Current value of the counter')
+
+@app.route("/metrics")
+def metrics():
+    return metrics.generate_latest()
 
 @app.route("/", methods=["GET"])
 def main():
@@ -14,12 +20,14 @@ def main():
 def add_counter():
     global counter
     counter += 1
+    counter_metric.inc()  # Increment the Prometheus counter
     return render_template("home.html", counter=counter)
 
 @app.route("/subtract", methods=["POST"])
 def subtract_counter():
     global counter
     counter -= 1
+    counter_metric.dec()  # Decrement the Prometheus counter
     return render_template("home.html", counter=counter)
 
 if __name__ == "__main__":

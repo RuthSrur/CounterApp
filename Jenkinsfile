@@ -7,6 +7,7 @@ pipeline {
         PEM_KEY_CREDENTIALS_ID = 'aws-ec2-key'
         DEPLOY_PORT = '8081'
         EC2_IP = '34.205.93.45'
+        DOCKER_NETWORK = 'monitoring_network'
     }
     stages {
         stage('Build') {
@@ -20,13 +21,15 @@ pipeline {
                 # Build Docker Image
                 docker build --no-cache -t counter:1.0 .
 
+                # Create Docker network if it doesn't exist
+                docker network create ${DOCKER_NETWORK} || true
+
                 # Run Docker Container
-                docker run -d --name counter_app -p ${DEPLOY_PORT}:8081 counter:1.0
+                docker run -d --name counter_app --network ${DOCKER_NETWORK} -p ${DEPLOY_PORT}:8081 counter:1.0
                 sleep 10
                 '''
             }
         }
-
         stage('Unit Tests') {
             steps {
                 sh '''
@@ -39,7 +42,6 @@ pipeline {
                 '''
             }
         }
-
         stage('Deploy') {
             when {
                 not {
@@ -70,6 +72,10 @@ pipeline {
 
                         // Deploy to EC2
                         sh """
+                        # Create Docker network if it doesn't exist
+                        ssh -o StrictHostKeyChecking=no -i ${PEM_KEY_FILE} ec2-user@${EC2_IP} \\
+                        'docker network create ${DOCKER_NETWORK} || true'
+
                         # Stop and remove any existing container with the name 'flask_api_app'
                         ssh -o StrictHostKeyChecking=no -i ${PEM_KEY_FILE} ec2-user@${EC2_IP} \\
                         'docker ps -q --filter "name=flask_api_app" | xargs -r docker stop && \\
@@ -81,7 +87,7 @@ pipeline {
 
                         # Run a new container with the Flask API on port 8081 (host) mapping to 8081 (container)
                         ssh -o StrictHostKeyChecking=no -i ${PEM_KEY_FILE} ec2-user@${EC2_IP} \\
-                        'docker run -d --name flask_api_app -p 8081:8081 ${env.ECR_REPO_URI}:latest'
+                        'docker run -d --name flask_api_app --network ${DOCKER_NETWORK} -p 8081:8081 ${env.ECR_REPO_URI}:latest'
                         """
                     }
                 }
