@@ -60,3 +60,12 @@ h3 {
 .post-btn:hover {
     background-color: #5a2ea6; /* Darker purple on hover */
 }
+.subtract-btn {
+    background-color: #e83e8c; /* Pink color */
+}
+
+.subtract-btn:hover {
+    background-color: #d63384; /* Darker pink on hover */
+}
+
+

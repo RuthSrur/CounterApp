@@ -18,15 +18,9 @@
         {% else %}
             <h3>Counter value: {{ counter }}</h3>
         {% endif %}
-        <form action="/increment" method="post" class="form-button">
+        <form action="/add" method="post" class="form-button">
             <button type="submit" class="btn post-btn">Click to add</button>
         </form>
-        <!-- Uncomment to use the GET button -->
-        <!--
-        <form action="/get" method="get" class="form-button">
-            <button type="submit" class="btn">Get</button>
-        </form>
-        -->
     </div>
 </body>
 </html>
