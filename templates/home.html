@@ -7,19 +7,15 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 </head>
-
 <body>
     <div class="container">
         <h1 class="main-title">Welcome To Counter Application</h1>
-        {% if counter == null and message != null %}
-            <h3>Successfully incremented the counter</h3>
-        {% elif counter == null and message == null %}
-            <h3>HOME</h3>
-        {% else %}
-            <h3>Counter value: {{ counter }}</h3>
-        {% endif %}
+        <h3>Counter value: {{ counter }}</h3>
         <form action="/add" method="post" class="form-button">
-            <button type="submit" class="btn post-btn">Click to add</button>
+            <button type="submit" class="btn post-btn">Add</button>
+        </form>
+        <form action="/subtract" method="post" class="form-button">
+            <button type="submit" class="btn subtract-btn">Subtract</button>
         </form>
     </div>
 </body>
