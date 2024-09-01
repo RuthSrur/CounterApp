@@ -6,7 +6,7 @@ pipeline {
         ECR_REPO_URI_CREDENTIALS_ID = 'ecr-repo-uri-id'
         PEM_KEY_CREDENTIALS_ID = 'aws-ec2-key'
         DEPLOY_PORT = '8081'
-        EC2_IP_CREDENTIALS_ID = 'ec2-ip-id'
+        EC2_IP = '34.205.93.45'
         DOCKER_NETWORK = 'monitoring_network'
     }
     stages {
@@ -45,8 +45,7 @@ pipeline {
                     withCredentials([
                         usernamePassword(credentialsId: env.AWS_CREDENTIALS_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
                         string(credentialsId: env.ECR_REPO_URI_CREDENTIALS_ID, variable: 'ECR_REPO_URI'),
-                        file(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY_FILE'),
-                        string(credentialsId: env.EC2_IP_CREDENTIALS_ID, variable: 'EC2_IP')
+                        file(credentialsId: env.PEM_KEY_CREDENTIALS_ID, variable: 'PEM_KEY_FILE')
                     ]) {
                         // Login to ECR
                         sh '''
