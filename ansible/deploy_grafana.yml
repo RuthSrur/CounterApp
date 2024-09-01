@@ -2,7 +2,7 @@
   hosts: ec2_instances
   become: yes
   vars:
-    ec2_public_ip: "34.205.93.45"  # Replace with your EC2 instance's public IP
+    ec2_public_ip: "34.205.93.45"  
   tasks:
     - name: Install Docker
       yum:
@@ -40,7 +40,7 @@
 
     - name: Create directory for Grafana and Prometheus
       file:
-        path: ~/CounterApp/grafana
+        path: ~/CounterApp/ansible
         state: directory
 
     - name: Create Docker network if it doesn't exist
@@ -49,7 +49,7 @@
 
     - name: Create docker-compose.yml
       copy:
-        dest: ~/CounterApp/grafana/docker-compose.yml
+        dest: ~/CounterApp/ansible/docker-compose.yml
         content: |
           version: '3'
           services:
@@ -79,7 +79,7 @@
 
     - name: Create prometheus.yml
       copy:
-        dest: ~/CounterApp/grafana/prometheus.yml
+        dest: ~/CounterApp/ansible/prometheus.yml
         content: |
           global:
             scrape_interval: 15s
@@ -94,5 +94,5 @@
     - name: Deploy Grafana and Prometheus with Docker Compose
       command:
         cmd: /usr/local/bin/docker-compose up -d
-        chdir: ~/CounterApp/grafana
+        chdir: ~/CounterApp/ansible
         executable: /bin/bash
