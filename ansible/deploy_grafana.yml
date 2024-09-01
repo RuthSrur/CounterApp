@@ -2,7 +2,7 @@
   hosts: ec2_instances
   become: yes
   vars:
-    ec2_public_ip: "34.205.93.45"  
+    ec2_public_ip: "18.212.102.249"  
   tasks:
     - name: Install Docker
       yum:
