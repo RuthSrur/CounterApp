@@ -65,15 +65,6 @@ pipeline {
                         env.ECR_REPO_URI = ECR_REPO_URI
 
                         // Tag and Push Docker Image
-<<<<<<< HEAD
-                        sh """
-                        docker tag counter:1.0 ${env.ECR_REPO_URI}:latest
-                        docker push ${env.ECR_REPO_URI}:latest
-                        """
-
-                        // Deploy to EC2
-=======
->>>>>>> main
                         sh """
                         docker tag counter:1.0 ${env.ECR_REPO_URI}:latest
                         docker push ${env.ECR_REPO_URI}:latest
