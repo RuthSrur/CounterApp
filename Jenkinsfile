@@ -30,7 +30,7 @@ pipeline {
                 '''
             }
         }
-        stage('Tests') {
+        stage('Unit Tests') {
             steps {
                 sh '''
                 # Run Unit Tests
