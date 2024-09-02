@@ -11,23 +11,36 @@ pipeline {
     }
     stages {
         stage('Build') {
-            steps {
-                sh '''
-                # Stop and remove existing container
-                docker ps -q -f name=counter_app | xargs -r docker stop
-                sleep 5  # Wait to ensure the port is freed up
-                docker ps -a -q -f name=counter_app | xargs -r docker rm
+                steps {
+                    sh '''
+                    # Debug: Print current directory contents
+                    ls -la
+                    
+                    # Debug: Print Docker version
+                    docker --version
+                    
+                    # Stop and remove existing container
+                    docker ps -q -f name=counter_app | xargs -r docker stop
+                    sleep 5
+                    docker ps -a -q -f name=counter_app | xargs -r docker rm
 
-                # Build Docker Image
-                docker build --no-cache -t counter:1.0 .
+                    # Build Docker Image with verbose output
+                    docker build --no-cache -t counter:1.0 . 2>&1 | tee docker_build.log
+                    
+                    # Debug: Print Docker build log
+                    cat docker_build.log
 
-                # Create Docker network if it doesn't exist
-                docker network create ${DOCKER_NETWORK} || true
+                    # Create Docker network if it doesn't exist
+                    docker network create ${DOCKER_NETWORK} || true
 
-                # Run Docker Container
-                docker run -d --name counter_app --network ${DOCKER_NETWORK} -p ${DEPLOY_PORT}:8081 counter:1.0
-                sleep 10
-                '''
+                    # Run Docker Container
+                    docker run -d --name counter_app --network ${DOCKER_NETWORK} -p ${DEPLOY_PORT}:8081 counter:1.0
+                    sleep 10
+                    
+                    # Debug: Check if container is running
+                    docker ps
+                    '''
+                }
             }
         }
         stage('Unit Tests') {
