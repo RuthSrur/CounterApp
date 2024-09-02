@@ -1,16 +1,16 @@
-# Use an official Python runtime as a parent image
+# Use Python runtime as a parent image
 FROM python:3.10-slim
 
 WORKDIR /app
 
-# Install necessary dependencies
+# Install dependencies
 USER root
 
 RUN apt-get update && \
     apt-get install -y curl unzip sudo && \
     apt-get clean
 
-# Copy the app and requirements
+# Copy app and requirements
 COPY main.py requirements.txt test_main.py ./
 COPY static/ static/
 COPY templates/ templates/
