@@ -6,14 +6,6 @@ WORKDIR /app
 # Install necessary dependencies including awscli
 USER root
 
-# Install dependencies and AWS CLI
-RUN apt-get update && \
-    apt-get install -y curl unzip sudo && \
-    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
-    unzip awscliv2.zip && \
-    ./aws/install && \
-    rm -rf awscliv2.zip aws && \
-    apt-get clean
 
 # Copy the app and requirements
 COPY main.py requirements.txt test_main.py ./
