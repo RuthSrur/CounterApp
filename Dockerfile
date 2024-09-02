@@ -3,16 +3,11 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Install necessary dependencies including awscli
+# Install necessary dependencies
 USER root
 
-# Install dependencies and AWS CLI
 RUN apt-get update && \
     apt-get install -y curl unzip sudo && \
-    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
-    unzip awscliv2.zip && \
-    ./aws/install && \
-    rm -rf awscliv2.zip aws && \
     apt-get clean
 
 # Copy the app and requirements
@@ -32,4 +27,3 @@ ENV FLASK_RUN_HOST="0.0.0.0"
 
 # Run application
 CMD ["flask", "run", "--host=0.0.0.0", "--port=8081"]
-

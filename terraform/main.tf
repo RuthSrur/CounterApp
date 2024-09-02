@@ -106,7 +106,7 @@ module "ec2_instance" {
                   exit 1
                 fi
                 EOF
-  name               = "DockerInstance"
+  name               = "CounterAppInstance"
 }
 
 output "instance_id" {

@@ -1,0 +1,33 @@
+version: '3'
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring_network
+
+  flask_api_app:
+    image: public.ecr.aws/k6k0r1y7/counter:latest
+    container_name: flask_api_app
+    ports:
+      - "8081:8081"
+    networks:
+      - monitoring_network    
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring_network
+
+networks:
+  monitoring_network:
+    external: true
