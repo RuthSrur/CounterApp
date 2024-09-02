@@ -6,29 +6,20 @@ pipeline {
         ECR_REPO_URI_CREDENTIALS_ID = 'ecr-repo-uri-id'
         PEM_KEY_CREDENTIALS_ID = 'aws-ec2-key'
         DEPLOY_PORT = '8081'
-        EC2_IP = '18.212.102.249'
+        EC2_IP = '34.201.3.55'
         DOCKER_NETWORK = 'monitoring_network'
     }
     stages {
         stage('Build') {
             steps {
                 sh '''
-                # Debug: Print current directory contents
-                ls -la
-                
-                # Debug: Print Docker version
-                docker --version
-                
                 # Stop and remove existing container
                 docker ps -q -f name=counter_app | xargs -r docker stop
-                sleep 5
+                sleep 5  # Wait to ensure the port is freed up
                 docker ps -a -q -f name=counter_app | xargs -r docker rm
 
-                # Build Docker Image with verbose output
-                docker build --no-cache -t counter:1.0 . 2>&1 | tee docker_build.log
-                
-                # Debug: Print Docker build log
-                cat docker_build.log
+                # Build Docker Image
+                docker build --no-cache -t counter:1.0 .
 
                 # Create Docker network if it doesn't exist
                 docker network create ${DOCKER_NETWORK} || true
@@ -36,9 +27,6 @@ pipeline {
                 # Run Docker Container
                 docker run -d --name counter_app --network ${DOCKER_NETWORK} -p ${DEPLOY_PORT}:8081 counter:1.0
                 sleep 10
-                
-                # Debug: Check if container is running
-                docker ps
                 '''
             }
         }
