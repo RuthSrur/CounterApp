@@ -3,9 +3,12 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Install necessary dependencies including awscli
+# Install necessary dependencies
 USER root
 
+RUN apt-get update && \
+    apt-get install -y curl unzip sudo && \
+    apt-get clean
 
 # Copy the app and requirements
 COPY main.py requirements.txt test_main.py ./
@@ -24,4 +27,3 @@ ENV FLASK_RUN_HOST="0.0.0.0"
 
 # Run application
 CMD ["flask", "run", "--host=0.0.0.0", "--port=8081"]
-
