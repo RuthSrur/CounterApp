@@ -42,10 +42,6 @@ pipeline {
                 '''
             }
         }
-<<<<<<< HEAD
-
-=======
->>>>>>> main
         stage('Deploy') {
             when {
                 not {
