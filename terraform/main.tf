@@ -20,7 +20,7 @@ module "security_group" {
 
 module "ec2_instance" {
   source            = "./modules/ec2_instance"
-  instance_type     = "t2.micro"
+  instance_type     = "t3.small"  
   key_name          = "My-key"
   subnet_id         = module.vpc.subnet_id
   security_group_ids = [module.security_group.security_group_id]
