@@ -45,7 +45,7 @@
 
     - name: Create Docker network if it doesn't exist
       command: docker network create monitoring_network
-      ignore_errors: yes  # Ignore errors if the network already exists
+      ignore_errors: yes  
 
     - name: Create docker-compose.yml
       copy:
@@ -53,6 +53,8 @@
         content: |
           version: '3'
           services:
+
+
             prometheus:
               image: prom/prometheus:latest
               container_name: prometheus
